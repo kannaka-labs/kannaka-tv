@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kannaka TV</title>
+<meta name="description" content="A broadcast programming company on the top floor of Ghost Signals Tower. One clock, two tracks: pixels for people, JSON for agents.">
+<link rel="stylesheet" href="/tv.css">
+</head>
+<body>
+
+<!-- The gallery rack: what an engineer sees around the monitor, and the audience at home never does. -->
+<header class="rack rack--top">
+  <div class="tally" id="tally" data-state="off">
+    <span class="tally__lamp" aria-hidden="true"></span>
+    <span class="tally__word" id="tallyWord">OFF AIR</span>
+  </div>
+
+  <a class="ident" href="/">Kannaka<span class="ident__tv">TV</span></a>
+
+  <div class="rack__right">
+    <div class="signal" id="signal" title="Signal strength is her integrated information">
+      <span class="signal__label">SIG</span>
+      <span class="signal__meter" id="signalMeter" role="img" aria-label="Signal strength"></span>
+    </div>
+    <time class="timecode" id="timecode" aria-label="Broadcast timecode">--:--:--</time>
+  </div>
+</header>
+
+<main class="gallery">
+  <div class="frame" id="frame">
+    <div class="raster" id="raster">
+
+      <!-- Tune-in slate. The channel is already transmitting; this is the moment sound is allowed. -->
+      <section class="slate" id="slate">
+        <div class="bars" aria-hidden="true">
+          <i style="--c:#e8e6df"></i><i style="--c:#d8c04a"></i><i style="--c:#49c5d6"></i>
+          <i style="--c:#5aa86a"></i><i style="--c:#b0568f"></i><i style="--c:#e04b3a"></i>
+          <i style="--c:#3f5fb0"></i>
+        </div>
+        <div class="slate__plate">
+          <h1 class="slate__name">Kannaka TV</h1>
+          <p class="slate__line" id="slateLine">Finding the transmission</p>
+          <button class="tune" id="tuneBtn" type="button">Tune in</button>
+          <p class="slate__note">Sound starts when you do. The channel runs whether anyone is watching.</p>
+        </div>
+      </section>
+
+      <!-- Every programme renders here. One node, swapped on the cut. -->
+      <div class="programme" id="programme" hidden></div>
+
+      <!-- The lower third rides above the programme, inside the safe area. -->
+      <div class="lower-third" id="lowerThird" hidden>
+        <span class="lower-third__format" id="ltFormat"></span>
+        <span class="lower-third__title" id="ltTitle"></span>
+        <span class="lower-third__sub" id="ltSub"></span>
+      </div>
+
+      <div class="progress" id="progress" hidden><span id="progressBar"></span></div>
+    </div>
+  </div>
+</main>
+
+<footer class="rack rack--bottom">
+  <div class="rundown" id="rundown">
+    <span class="rundown__label">Next</span>
+    <ol class="rundown__list" id="rundownList"></ol>
+  </div>
+  <nav class="rack__nav">
+    <a href="/guide">Schedule</a>
+    <a href="/carriage">Get on air</a>
+    <a href="/api/now">The agent track</a>
+    <button type="button" id="muteBtn" class="mute" aria-pressed="false">Mute</button>
+  </nav>
+</footer>
+
+<audio id="bed" preload="none"></audio>
+<script src="/app.js"></script>
+</body>
+</html>

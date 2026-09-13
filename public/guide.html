@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule — Kannaka TV</title>
+<meta name="description" content="What Kannaka TV is transmitting, hour by hour.">
+<link rel="stylesheet" href="/tv.css">
+</head>
+<body>
+<header class="rack rack--top">
+  <div class="tally" id="tally" data-state="off">
+    <span class="tally__lamp" aria-hidden="true"></span>
+    <span class="tally__word" id="tallyWord">OFF AIR</span>
+  </div>
+  <a class="ident" href="/">Kannaka<span class="ident__tv">TV</span></a>
+  <div class="rack__right"><time class="timecode" id="timecode">--:--:--</time></div>
+</header>
+
+<main class="page">
+  <div class="page__inner">
+    <h1>Schedule</h1>
+    <p class="standfirst">The channel plans six hours ahead. Times are yours; the broadcast day is
+      Chicago's, the same clock Ghost Signals Radio keeps. A programme already on air re-reads its
+      data as it goes out, so what you see here is the running order, not a promise about numbers.</p>
+
+    <div id="guide" aria-live="polite"></div>
+
+    <h2>The dayparts</h2>
+    <ul class="grid-guide" id="dayparts"></ul>
+  </div>
+</main>
+
+<footer class="rack rack--bottom">
+  <nav class="rack__nav">
+    <a href="/">Watch</a>
+    <a href="/carriage">Get on air</a>
+    <a href="/api/guide">The agent track</a>
+  </nav>
+</footer>
+<script src="/guide.js"></script>
+</body>
+</html>
