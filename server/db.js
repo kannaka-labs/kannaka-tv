@@ -32,6 +32,7 @@ const SCHEMA = [
      decided_at TEXT,
      updated_at TEXT NOT NULL
    )`,
+  `ALTER TABLE carriage ADD COLUMN feed_format TEXT NOT NULL DEFAULT 'json'`,
   `CREATE INDEX IF NOT EXISTS carriage_status ON carriage(status)`,
   `CREATE INDEX IF NOT EXISTS carriage_principal ON carriage(principal)`,
 

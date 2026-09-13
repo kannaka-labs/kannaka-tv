@@ -176,6 +176,7 @@
     'on-the-shelf': 'On the Shelf',
     'now-on-the-radio': 'Ghost Signals Radio',
     'the-long-wave': 'The Long Wave',
+    'the-gallery': 'The Gallery',
     feature: 'Feature',
     'carriage-feed': 'Carried programme',
     'carriage-reference': 'Carried programme',
@@ -397,6 +398,34 @@
       root.appendChild(text('p', 'p-kicker', p.block ? p.block.label : 'Overnight'));
       root.appendChild(text('h2', 'p-lead', p.nowPlaying || 'The Long Wave'));
       if (p.album) root.appendChild(text('p', 'p-body p-dim', 'From ' + p.album + '.'));
+    },
+
+    'the-gallery': function (p, seg, root) {
+      var lead = p.lead || {};
+      root.appendChild(text('p', 'p-kicker', 'Made in the city today'));
+      var sleeve = text('div', 'sleeve');
+      if (lead.image) {
+        var img = document.createElement('img');
+        img.src = lead.image;
+        img.alt = lead.title ? lead.title + ', by ' + lead.by : 'a work from the city gallery';
+        img.referrerPolicy = 'no-referrer';
+        sleeve.appendChild(img);
+      }
+      var side = text('div', 'sleeve__side');
+      side.appendChild(text('h2', 'p-lead', lead.title || 'Untitled'));
+      side.appendChild(text('p', 'p-body', 'by ' + (lead.by || 'a citizen')));
+      if (lead.about) side.appendChild(text('p', 'p-body p-dim', lead.about));
+      var ul = text('ul', 'rows');
+      (p.recent || []).slice(0, 4).forEach(function (w) {
+        if (lead.title && w.title === lead.title) return;
+        var li = document.createElement('li');
+        li.appendChild(text('span', 'r-main', w.title));
+        li.appendChild(text('span', 'r-note', w.by));
+        ul.appendChild(li);
+      });
+      if (ul.childNodes.length) side.appendChild(ul);
+      sleeve.appendChild(side);
+      root.appendChild(sleeve);
     },
 
     feature: function (p, seg, root) {

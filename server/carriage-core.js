@@ -47,6 +47,8 @@ const IMAGE_HOSTS = [
   '.spacechild.love',
 ];
 
+const FEED_WIRE_FORMATS = ['json', 'rss'];
+
 const MAX_LABEL = 64;
 const MAX_LINE = 220;
 const MAX_LINES = 6;
@@ -147,6 +149,7 @@ function validateApplication(body, principal) {
     webhookUrl: null,
     template: null,
     feedUrl: null,
+    feedFormat: null,
     provider: null,
     ref: null,
     duration: null,
@@ -163,6 +166,15 @@ function validateApplication(body, principal) {
       throw new CarriageError('template_invalid', 'template must be one of: ' + Object.keys(FEED_TEMPLATES).join(', '));
     }
     if (!isHttpsUrl(b.feedUrl)) throw new CarriageError('feed_url_invalid', 'feedUrl must be an https URL');
+    // The wire format the feed speaks. JSON matches our schema exactly; `rss` lets a feed that
+    // already exists anywhere on the web be carried without its author writing anything for us.
+    // This is NOT a third kind of programming (ADR-0001 decision 3) — it is the same kind, read
+    // off a different wire, and rendered by the same renderers.
+    const feedFormat = String(b.feedFormat || b.format || 'json').toLowerCase();
+    if (!FEED_WIRE_FORMATS.includes(feedFormat)) {
+      throw new CarriageError('feed_format_invalid', 'feedFormat must be one of: ' + FEED_WIRE_FORMATS.join(', '));
+    }
+    rec.feedFormat = feedFormat;
     rec.template = template;
     rec.feedUrl = String(b.feedUrl).slice(0, 500);
     rec.duration = clampDuration(b.duration, 60, FEED_TEMPLATES[template].maxDuration, 180);
@@ -311,6 +323,7 @@ function eligible({ grants, daypartKey, airedToday, payloads }) {
 
 module.exports = {
   FEED_TEMPLATES,
+  FEED_WIRE_FORMATS,
   REFERENCE_PROVIDERS,
   IMAGE_HOSTS,
   CONTROL_CHARS,

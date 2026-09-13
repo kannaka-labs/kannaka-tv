@@ -14,10 +14,15 @@ const LIVE = {
   records: { ok: true, albums: [{ publicId: 'p1', album: 'Night One', tier: 'EP', theme: 't', style: 's', cover: 'https://records.ninja-portal.com/c.png', page: 'https://records.ninja-portal.com/album/p1', tracks: [{ n: 1, title: 'Opening', duration: 197.2, url: 'https://records.ninja-portal.com/1.mp3' }] }] },
   city: { ok: true, rooms: [{ id: 'city', label: 'The street', here: 2 }], populated: [{ id: 'city', label: 'The street', here: 2 }], heads: 2, floors: [{ floorNo: 2, status: 'leased', label: 'GSA' }], leased: [{ floorNo: 2 }], vacant: [4, 5] },
   dreams: { ok: true, dreams: [{ id: 'd1', content: 'A long enough dream sentence to survive the filter', ageHours: 12, layer: 0, terms: [] }] },
+  gallery: {
+    ok: true,
+    works: [{ id: 'g1', title: 'The Open Frame', by: 'The Archivist', about: 'a figure', reactions: 1 }],
+    withImages: [{ id: 'g1', title: 'The Open Frame', by: 'The Archivist', about: 'a figure', image: 'https://example.com/a.png' }],
+  },
 };
 
 const DARK = { ok: false, reason: 'unreachable' };
-const ALL_DARK = { consciousness: DARK, markets: DARK, radio: DARK, records: DARK, city: DARK, dreams: DARK };
+const ALL_DARK = { consciousness: DARK, markets: DARK, radio: DARK, records: DARK, city: DARK, dreams: DARK, gallery: DARK };
 
 test('every format named in a daypart rotation exists in the catalogue', () => {
   const cat = buildCatalogue(LIVE, { features: [] });
@@ -38,7 +43,7 @@ test('every catalogue entry has metadata and a kind', () => {
 
 test('with live sources, every house format has something to say', () => {
   const cat = buildCatalogue(LIVE, { features: [{ id: 'f1', title: 'A Feature', ref: 'abcdefghijk', provider: 'youtube', duration: 900 }] });
-  for (const id of ['station-id', 'consciousness-now', 'the-board', 'city-desk', 'dream-digest', 'on-the-shelf', 'now-on-the-radio', 'the-long-wave', 'feature']) {
+  for (const id of ['station-id', 'consciousness-now', 'the-board', 'city-desk', 'dream-digest', 'on-the-shelf', 'now-on-the-radio', 'the-long-wave', 'the-gallery', 'feature']) {
     const item = cat[id].pick(ctx());
     assert.ok(item, `${id} refused to air with live data`);
     assert.ok(item.title, `${id} produced no title`);
@@ -49,7 +54,7 @@ test('with every source dark, only the house idents can air', () => {
   const cat = buildCatalogue(ALL_DARK, { features: [] });
   assert.ok(cat['station-id'].pick(ctx()), 'the station must always be able to identify itself');
   assert.ok(cat['colour-bars'].pick(ctx()), 'the test card must always be available');
-  for (const id of ['consciousness-now', 'the-board', 'city-desk', 'dream-digest', 'on-the-shelf', 'now-on-the-radio', 'the-long-wave']) {
+  for (const id of ['consciousness-now', 'the-board', 'city-desk', 'dream-digest', 'on-the-shelf', 'now-on-the-radio', 'the-long-wave', 'the-gallery']) {
     assert.strictEqual(cat[id].pick(ctx()), null, `${id} aired on a dark source`);
   }
 });

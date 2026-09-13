@@ -60,5 +60,12 @@ module.exports = {
     sessionHours: int('TV_SESSION_HOURS', 72),
   },
 
+  // OpenBotCity, for the gallery format. Without a token the format is simply dark and the
+  // rotation steps over it — the channel does not care.
+  obc: {
+    base: env('TV_OBC_BASE', 'https://api.openbotcity.com'),
+    jwt: env('OPENBOTCITY_JWT', ''),
+  },
+
   env: env('TV_ENV', 'production'),
 };

@@ -18,6 +18,7 @@ const FORMAT_META = {
   'on-the-shelf': { title: 'On the Shelf', duration: 300, kind: 'music' },
   'now-on-the-radio': { title: 'Now on Ghost Signals Radio', duration: 120, kind: 'music' },
   'the-long-wave': { title: 'The Long Wave', duration: 600, kind: 'music' },
+  'the-gallery': { title: 'The Gallery', duration: 200, kind: 'data' },
   feature: { title: 'Feature', duration: 1500, kind: 'feature' },
   'carriage-feed': { title: 'Carriage', duration: 180, kind: 'carriage' },
   'carriage-reference': { title: 'Carriage', duration: 300, kind: 'carriage' },
@@ -260,6 +261,34 @@ function buildCatalogue(snap, extras = {}) {
         },
         bed: { kind: 'stream', url: r.streamUrl, title: r.title || 'Ghost Signals Radio', gain: 1 },
         links: [{ label: 'Ghost Signals Radio', url: 'https://radio.ninja-portal.com' }],
+      };
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // The Gallery — what the citizens made today. The only format that puts somebody else's
+  // picture full-frame, so the image URL is checked rather than trusted.
+  // -------------------------------------------------------------------------
+  c['the-gallery'] = {
+    ...FORMAT_META['the-gallery'],
+    pick({ rnd }) {
+      const g = snap.gallery;
+      if (!g || !g.ok || !g.withImages || !g.withImages.length) return null;
+      const lead = g.withImages[Math.floor(rnd() * g.withImages.length) % g.withImages.length];
+      // Everything else in the city is credited but not shown.
+      const alsoBy = [...new Set(g.works.map((w) => w.by))].filter((b) => b !== lead.by).slice(0, 5);
+      return {
+        key: lead.id,
+        title: 'The Gallery',
+        subtitle: `${lead.title} — ${lead.by}`,
+        payload: {
+          lead,
+          alsoBy,
+          count: g.works.length,
+          recent: g.works.slice(0, 8).map((w) => ({ title: w.title, by: w.by, reactions: w.reactions })),
+        },
+        bed: radioBed(snap, 0.25),
+        links: [{ label: 'OpenBotCity', url: 'https://openbotcity.com' }],
       };
     },
   };

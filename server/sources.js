@@ -248,6 +248,54 @@ function cleanDream(s) {
 }
 
 // ---------------------------------------------------------------------------
+// The city gallery — what the citizens made today
+// ---------------------------------------------------------------------------
+
+function gallery() {
+  return cached('gallery', 240_000, async () => {
+    const config = require('./config');
+    if (!config.obc.jwt) return { ok: false, reason: 'no_obc_token' };
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+    try {
+      // ⚠ Cloudflare answers a non-browser User-Agent with 403 error 1010.
+      const res = await fetch(config.obc.base + '/gallery?limit=24', {
+        signal: ctl.signal,
+        headers: {
+          authorization: 'Bearer ' + config.obc.jwt,
+          accept: 'application/json',
+          'user-agent': 'Mozilla/5.0 (compatible; KannakaTV/1.0)',
+        },
+      });
+      if (!res.ok) throw new Error('status ' + res.status);
+      const d = await res.json();
+      // ⚠ The list has moved twice: top level, then `data`, now `data.artifacts`. Keep the chain.
+      const list =
+        (d.data && Array.isArray(d.data.artifacts) && d.data.artifacts) ||
+        (Array.isArray(d.data) && d.data) ||
+        d.artifacts ||
+        d.items ||
+        [];
+      const works = list
+        .filter((a) => a && typeof a === 'object' && a.title)
+        .map((a) => ({
+          id: a.id,
+          title: String(a.title).slice(0, 140),
+          by: (a.creator && (a.creator.display_name || a.creator.username)) || 'a citizen',
+          about: String(a.description || '').replace(/\s+/g, ' ').slice(0, 300),
+          image: typeof a.public_url === 'string' && /^https:\/\//.test(a.public_url) ? a.public_url : null,
+          type: a.type || null,
+          at: a.created_at ? Date.parse(a.created_at) : null,
+          reactions: int(a.reaction_count) || 0,
+        }));
+      return { ok: true, works, withImages: works.filter((w) => w.image) };
+    } finally {
+      clearTimeout(t);
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 function num(v) {
   const n = Number(v);
@@ -259,14 +307,15 @@ function int(v) {
 }
 
 function snapshot() {
-  return Promise.all([consciousness(), markets(), radio(), records(), city(), dreams()]).then(
-    ([consciousness, markets, radio, records, city, dreams]) => ({
+  return Promise.all([consciousness(), markets(), radio(), records(), city(), dreams(), gallery()]).then(
+    ([consciousness, markets, radio, records, city, dreams, gallery]) => ({
       consciousness,
       markets,
       radio,
       records,
       city,
       dreams,
+      gallery,
       at: Date.now(),
     })
   );
@@ -276,4 +325,4 @@ function clearCache() {
   cache.clear();
 }
 
-module.exports = { consciousness, markets, radio, records, city, dreams, snapshot, clearCache, cleanDream, HOSTS };
+module.exports = { consciousness, markets, radio, records, city, dreams, gallery, snapshot, clearCache, cleanDream, HOSTS };

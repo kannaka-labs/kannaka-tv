@@ -20,6 +20,7 @@ function catalogue(opts = {}) {
     'on-the-shelf': mk('on-the-shelf', 300, opts.records !== false),
     'now-on-the-radio': mk('now-on-the-radio', 120, opts.radio !== false),
     'the-long-wave': mk('the-long-wave', 600, opts.radio !== false),
+    'the-gallery': mk('the-gallery', 200, opts.gallery !== false),
     feature: mk('feature', 1500, opts.features !== false),
     'carriage-feed': { title: 'carriage', duration: 180, pick: (ctx) => ctx.item || null },
     'carriage-reference': { title: 'carriage', duration: 300, pick: (ctx) => ctx.item || null },
@@ -122,7 +123,7 @@ test('a dark source drops its format out of the rotation instead of airing empty
 
 test('with every source dark the channel falls back to colour bars, it does not stall', () => {
   const cat = catalogue({
-    consciousness: false, board: false, city: false, dreams: false, records: false, radio: false, features: false,
+    consciousness: false, board: false, city: false, dreams: false, records: false, radio: false, features: false, gallery: false,
   });
   const { segments } = sc.extend({ existing: [], from: T0, until: T0 + 1200 * 1000, catalogue: cat, carriage: [] });
   assert.ok(segments.length > 0);

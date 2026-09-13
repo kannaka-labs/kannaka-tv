@@ -6,7 +6,8 @@ const crypto = require('node:crypto');
 const db = require('./db');
 const config = require('./config');
 const core = require('./carriage-core');
-const { fetchJson, FeedError } = require('./fetch-safe');
+const { fetchJson, fetchFeed, FeedError } = require('./fetch-safe');
+const feedFormats = require('./feed-formats');
 
 function nowIso() {
   return new Date().toISOString();
@@ -27,6 +28,7 @@ function rowToGrant(r) {
     kind: r.kind,
     template: r.template,
     feedUrl: r.feed_url,
+    feedFormat: r.feed_format || 'json',
     provider: r.provider,
     ref: r.ref,
     duration: r.duration,
@@ -60,9 +62,9 @@ async function apply(body, identity) {
   const grantId = newId('car_');
   await db.run(
     `INSERT INTO carriage
-       (grant_id, principal, system, label, about, kind, template, feed_url, provider, ref,
+       (grant_id, principal, system, label, about, kind, template, feed_url, feed_format, provider, ref,
         duration, dayparts_json, max_per_day, contact, webhook_url, status, applied_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       grantId,
       rec.principal,
@@ -72,6 +74,7 @@ async function apply(body, identity) {
       rec.kind,
       rec.template,
       rec.feedUrl,
+      rec.feedFormat || 'json',
       rec.provider,
       rec.ref,
       rec.duration,
@@ -178,11 +181,26 @@ async function refreshOne(grant) {
   }
 
   try {
-    const raw = await fetchJson(grant.feedUrl, {
-      maxBytes: config.feed.maxBytes,
-      timeoutMs: config.feed.timeoutMs,
-    });
-    const payload = core.shapeFeedPayload(grant.template, raw);
+    let payload;
+    if (grant.feedFormat === 'rss') {
+      // An RSS/Atom feed is read off the wire as text and translated into a shape our own
+      // renderers already accept, then put through the SAME validation as a JSON feed — so a
+      // hostile feed cannot reach the screen by choosing a different wire format.
+      const res = await fetchFeed(grant.feedUrl, {
+        maxBytes: config.feed.maxBytes,
+        timeoutMs: config.feed.timeoutMs,
+        headers: { accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml' },
+      });
+      if (res.status < 200 || res.status >= 300) throw new FeedError('bad_status', 'status ' + res.status);
+      const parsed = feedFormats.parseFeed(res.body);
+      payload = core.shapeFeedPayload(grant.template, feedFormats.toPayload(parsed, grant.template, grant.label));
+    } else {
+      const raw = await fetchJson(grant.feedUrl, {
+        maxBytes: config.feed.maxBytes,
+        timeoutMs: config.feed.timeoutMs,
+      });
+      payload = core.shapeFeedPayload(grant.template, raw);
+    }
     await db.run(
       `INSERT INTO feed_cache (grant_id, payload_json, fetched_at, ok, reason, consecutive_failures)
        VALUES (?,?,?,1,NULL,0)
@@ -192,7 +210,10 @@ async function refreshOne(grant) {
     );
     return { ok: true, payload };
   } catch (e) {
-    const reason = e instanceof FeedError || e instanceof core.CarriageError ? e.code : 'refresh_failed';
+    const reason =
+      e instanceof FeedError || e instanceof core.CarriageError || e instanceof feedFormats.FeedFormatError
+        ? e.code
+        : 'refresh_failed';
     const row = await db.get('SELECT consecutive_failures FROM feed_cache WHERE grant_id = ?', [grant.grantId]);
     const fails = ((row && row.consecutive_failures) || 0) + 1;
     await db.run(
