@@ -333,7 +333,10 @@ async function route(req, res, url) {
     }
 
     if (p === '/api/admin/features/reload' && method === 'POST') {
-      return send(res, 200, { ok: true, features: features.reload().length });
+      const n = features.reload().length;
+      // Reloading the slate is a programming change, so it replans the tail like any other —
+      // otherwise a new feature waits out the whole committed horizon before it can air.
+      return send(res, 200, { ok: true, features: n, replan: await transmitter.replanTail('features reloaded') });
     }
 
     if (p === '/api/admin/panel' && method === 'POST') {
