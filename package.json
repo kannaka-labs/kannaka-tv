@@ -8,7 +8,7 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "test": "node --test test/schedule.test.js test/carriage.test.js test/fetch-safe.test.js test/formats.test.js test/replan.test.js test/http.test.js"
+    "test": "node --test test/schedule.test.js test/carriage.test.js test/fetch-safe.test.js test/formats.test.js test/replan.test.js test/tower.test.js test/http.test.js"
   },
   "dependencies": {
     "sqlite3": "^5.1.7"

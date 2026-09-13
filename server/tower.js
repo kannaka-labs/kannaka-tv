@@ -21,13 +21,23 @@ function room() {
   return config.tower.storey ? `tower:${config.tower.storey}` : '';
 }
 
+// ⚠⚠ KAX serves its SPA from a catch-all: ANY unknown path answers 200 with HTML. So a wrong URL
+// does not 404 — it succeeds. Two consequences, both learned the hard way on this floor:
+//   1. every API path must carry the `/api` prefix (the record studio bakes it into its base URL),
+//   2. a status check alone is worthless here. `post` demands JSON back, and a 200 that is not JSON
+//      is reported as `spa_catch_all` rather than success.
+function apiUrl(path) {
+  const base = config.tower.base.replace(/\/+$/, '').replace(/\/api$/, '');
+  return base + '/api' + path;
+}
+
 async function post(path, body, which = 'tower') {
   const token = which === 'tower' ? config.tower.credential || config.tower.agentToken : config.tower.agentToken;
   if (!token) return { status: 0, json: { error: 'no token' } };
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), 15_000);
   try {
-    const res = await fetch(config.tower.base + path, {
+    const res = await fetch(apiUrl(path), {
       method: 'POST',
       signal: ctl.signal,
       headers: {
@@ -38,11 +48,15 @@ async function post(path, body, which = 'tower') {
       },
       body: JSON.stringify(body),
     });
+    // NB: not `body` — that is this function's parameter, and a `const body` here would put it in
+    // the temporal dead zone for the JSON.stringify above. Syntax-valid, throws at runtime.
+    const raw = await res.text();
     let json = null;
     try {
-      json = await res.json();
+      json = JSON.parse(raw);
     } catch {
-      /* not json */
+      // HTML back from an API path means the catch-all answered. Never call that a success.
+      return { status: res.status, json: null, spa: true };
     }
     return { status: res.status, json };
   } catch (e) {
@@ -95,7 +109,8 @@ async function writePanel(nowPayload) {
   if (image) body.assetUrl = image;
 
   const r = await post(`/tower/storey/${config.tower.storey}/panel`, body, 'tower');
-  return { ok: r.status >= 200 && r.status < 300, status: r.status, body };
+  const ok = r.status >= 200 && r.status < 300 && !r.spa && Boolean(r.json && r.json.ok);
+  return { ok, status: r.status, spa: Boolean(r.spa), error: r.json && r.json.error, body };
 }
 
 // The tower's panel allowlist is narrow and ours by design; an album cover served from the record
@@ -120,7 +135,7 @@ async function say(text) {
     await post('/city/enter', { room: room() }, 'agent');
     r = await post('/city/say', { room: room(), text: line }, 'agent');
   }
-  return { ok: r.status >= 200 && r.status < 300, status: r.status };
+  return { ok: r.status >= 200 && r.status < 300 && !r.spa, status: r.status, spa: Boolean(r.spa) };
 }
 
 // ---------------------------------------------------------------------------
@@ -172,4 +187,4 @@ function stop() {
   timer = null;
 }
 
-module.exports = { configured, writePanel, say, verifySignature, status, start, stop, ascii, room };
+module.exports = { configured, apiUrl, writePanel, say, verifySignature, status, start, stop, ascii, room };
