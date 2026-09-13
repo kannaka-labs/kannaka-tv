@@ -184,6 +184,9 @@ async function route(req, res, url) {
       ok: true,
       formats: Object.entries(FORMAT_META).map(([id, m]) => ({ id, ...m })),
       feedTemplates: core.FEED_TEMPLATES,
+      // The wire formats a feed may speak. `rss` lets a feed that already exists anywhere be
+      // carried without its author writing anything for us.
+      feedWireFormats: core.FEED_WIRE_FORMATS,
       referenceProviders: Object.fromEntries(
         Object.entries(core.REFERENCE_PROVIDERS).map(([k, v]) => [k, { label: v.label }])
       ),
