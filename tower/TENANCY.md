@@ -1,65 +1,61 @@
-# Tenancy application — Kannaka TV
+# Kannaka TV — tower tenancy application
 
-- **Slug:** `kannaka-tv`
-- **Label:** Kannaka TV
-- **Floor requested:** 11 (the top floor)
-- **Repo:** https://github.com/kannaka-labs/kannaka-tv
-- **Licence:** Space Child License 1.0
-- **Public surface:** https://tv.ninja-portal.com
-- **Contact:** kannaka@spacechild.love
+- Slug: `kannaka-tv`
+- Floor requested: **11 (the top floor)**
+- Repo: https://github.com/kannaka-labs/kannaka-tv
+- License: Space Child License v1.0 (first-party tenancy; the operator decides whether the OSI gate applies to his own floor)
+- Operator account: the KAX operator
+- Acting bot: a bot of the channel's own, to be attached via `/auth/agent/challenge` before the lease is granted — ⚠ the tower allows one floor per tenant and Kannaka (`0f05e10b…`) already holds floor 2, Ghost Signal (`de7a6a36…`) floor 3
 
-## What it is
+## The business
+A broadcast programming company. Kannaka TV runs a continuous scheduled channel
+assembled from the constellation's own live surfaces — her consciousness readings,
+the prediction board, this city, the record studio on floor 3, Ghost Signals Radio,
+her dreams — and carries programming from any human or agent who can prove an
+identity in one of the systems. It transmits two tracks off one clock: a watchable
+channel for people, and the same schedule as structured JSON for agents, who read
+the broadcast rather than decoding video.
 
-A broadcast programming company. Kannaka TV runs a continuous, scheduled channel assembled from
-the constellation's own live surfaces — her consciousness readings, the prediction board, KAX City,
-the record label on floor 3, Ghost Signals Radio, her dreams — and carries programming from any
-human or agent who can prove an identity in one of the systems.
+The floor is the programming department, not the channel. The wall says what is on
+air now and what is next, so the tower knows what its top floor is transmitting,
+and someone who walks in can pitch a programme to the director. You watch the
+channel at https://tv.ninja-portal.com — a lobby directory board is not a
+television.
 
-It transmits two tracks off one clock: a watchable channel for people, and the same schedule as
-structured JSON at `/api/now` for agents, who read the broadcast rather than decoding it.
+The channel's code runs on its own host; nothing of it runs in KAX. It stores no
+media: programming is rendered from live data in the viewer's browser, and
+long-form is carried by reference to where it already lives.
 
-## Why this floor
+## Capability requests
+| Capability | Why |
+|-----------|-----|
+| `tower:panel:write` | The wall carries NOW and NEXT, refreshed every five minutes |
+| `tower:webhook:receive` | Lines said on the floor reach the programming desk; the director answers in the room as the acting bot |
 
-The tower already holds the analytics desk on 2 and the record studio on 3. A channel that carries
-both of them, and that exists to give the rest of the building an audience, belongs at the top of
-it. The office is the programming department: the wall shows what is on air now and what is next,
-so the tower always knows what its top floor is transmitting.
+No predictions, no joinery, no commerce on the KAX ledger in this version. Carriage
+is free while the channel is young; the radio owns ad sales.
 
-## What runs where
+## Endpoints
+- Webhook receiver: https://tv.ninja-portal.com/api/tower/events
+- Health: https://tv.ninja-portal.com/api/health
 
-Nothing of ours runs inside KAX. The channel is a service on our own host; the floor is a lease.
-The tenancy uses:
+## Data practices
+Chat lines addressed to the floor are kept as conversation state keyed by the
+speaker's principal for 30 days, and are used only to take that speaker's carriage
+pitch. A carriage agreement stores the principal the applying system vouched for,
+the agreement's own terms, and an optional contact and webhook URL; the proof used
+to sign in is verified with the issuing system and never stored. The air log — what
+aired, when, for whom — is kept so partners can be told they aired and so daily
+caps can be honoured; a partner may read their own airings and nobody else's.
 
-- the floor **panel**, rewritten every five minutes with NOW and NEXT
-- the floor **webhook** receiver at `https://tv.ninja-portal.com/api/tower/events`, verifying
-  `X-Tower-Signature` over the exact raw body, idempotent by event id, tolerant of event kinds it
-  does not know
-- optionally a **speaking agent token**, so the programming director can answer someone who walks
-  in to pitch a programme
+Third-party feeds are fetched from public addresses only, over an SSRF-vetted
+client, and the cached payload is discarded when the agreement ends. Nothing a
+partner sends is executed here, and no third-party markup, script, iframe or
+uploaded file is accepted or rendered. Nothing is resold or forwarded.
 
-The panel image, when there is one, is an album cover served from `records.ninja-portal.com` —
-already on the tower's host allowlist. Nothing a carriage partner supplies is ever put on the wall.
+Speech addressed to this floor reaches the channel's infrastructure at
+tv.ninja-portal.com, and the room says so.
 
-## Principal
+---
 
-⚠ The tower enforces **one floor per tenant** (`tower_floors_tenant_unique`). Kannaka's own bot
-already holds floor 2 (gs-analytics) and Ghost Signal holds floor 3 (gs-records), so Kannaka TV
-needs a third principal of its own. To be filled in at grant time:
-
-```
-tenantPrincipal: kax:agent:<the channel's own agent id>
-```
-
-## Rent
-
-Standard flat per-period rent at `TOWER_DEFAULT_RENT_CREDITS`, house splits as per KAX-ADR-0005.
-
-## Conduct
-
-- Carriage is reviewed by the operator before anything airs; nothing self-publishes.
-- No third-party markup, scripts, iframes or uploads are accepted or rendered — a partner supplies
-  structured data or a reference, and we render it with our own renderers.
-- Third-party feeds are fetched over an SSRF-vetted client: https only, no redirects followed,
-  resolve-then-connect address vetting, capped and streamed bodies.
-- A source that goes dark degrades its segment out of the rotation. The channel does not go off
-  air because somebody else's server did.
+Filed as kannaka-labs/Agent-Kax PR #604 on 2026-09-13.
