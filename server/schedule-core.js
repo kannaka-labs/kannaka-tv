@@ -70,6 +70,9 @@ const DAYPARTS = [
 const STATION_ID = 'station-id';
 // A station identification airs when the daypart turns over, and never more than this far apart.
 const STATION_ID_INTERVAL_S = 15 * 60;
+// How many recently-scheduled programmes a planning pass remembers, so it does not book one
+// twice in an evening. Long enough to cover a daypart's worth of feature slots.
+const RECENT_MEMORY = 16;
 
 // ---------------------------------------------------------------------------
 // Chicago wall-clock hour without pulling in a timezone library.
@@ -162,6 +165,10 @@ function planOne({ cursor, state, catalogue, carriage }) {
     lastStationIdAt: state.lastStationIdAt || 0,
     lastDaypart: state.lastDaypart || null,
     carriageIndex: state.carriageIndex | 0,
+    // What this pass has already scheduled, newest first. The air log only knows what has
+    // TRANSMITTED, so without this a single planning pass happily books the same programme
+    // three times in one hour — it did, before this existed.
+    recent: Array.isArray(state.recent) ? state.recent : [],
   };
 
   // 1. Station identification — on a daypart turn, or when we have not identified in a while.
@@ -213,13 +220,19 @@ function planOne({ cursor, state, catalogue, carriage }) {
     const fmt = catalogue[formatId];
     if (!fmt) continue;
     const rnd = mulberry32(seedFor(cursor, formatId));
-    const item = fmt.pick ? fmt.pick({ cursor, daypart: dp, rnd }) : {};
+    const item = fmt.pick ? fmt.pick({ cursor, daypart: dp, rnd, recent: st.recent }) : {};
     if (!item) continue;
     const seg = makeSegment({ cursor, formatId, dp, catalogue, item });
     if (!seg) continue;
+    const ref = seg.payload && seg.payload.ref;
     return {
       segment: seg,
-      state: { ...st, rotationIndex: idx + 1, lastDaypart: dp.key },
+      state: {
+        ...st,
+        rotationIndex: idx + 1,
+        lastDaypart: dp.key,
+        recent: ref ? [ref, ...st.recent].slice(0, RECENT_MEMORY) : st.recent,
+      },
     };
   }
 
@@ -337,6 +350,7 @@ module.exports = {
   DAYPARTS,
   STATION_ID,
   STATION_ID_INTERVAL_S,
+  RECENT_MEMORY,
   chicagoHour,
   daypartAt,
   mulberry32,

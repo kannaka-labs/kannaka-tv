@@ -253,3 +253,41 @@ test('a mid-plan daypart turn triggers an identification', () => {
   assert.ok(firstPrime > 0, 'the schedule crossed into Prime');
   assert.strictEqual(segments[firstPrime].formatId, 'station-id', 'the channel identifies when the daypart turns');
 });
+
+test('one planning pass never books the same programme twice', () => {
+  // The air log only knows what has TRANSMITTED, so a single pass has no record of what it just
+  // scheduled. Without a memory threaded through the plan state, a four-hour block booked the
+  // same episode three times in one hour — observed, not hypothetical.
+  const slate = Array.from({ length: 20 }, (_, i) => ({ ref: 'r' + i, title: 'Ep ' + i }));
+  const cat = {
+    'station-id': { title: 'id', duration: 20, pick: () => ({ key: 'x', title: 'id' }) },
+    feature: {
+      title: 'Feature',
+      duration: 1200,
+      pick({ recent }) {
+        const booked = new Set(recent || []);
+        const free = slate.filter((x) => !booked.has(x.ref));
+        const pick = (free.length ? free : slate)[0];
+        return { key: pick.ref, title: 'Feature', subtitle: pick.title, payload: { ref: pick.ref } };
+      },
+    },
+  };
+  const PRIME = Date.UTC(2026, 8, 14, 23, 0, 0); // 18:00 Chicago
+  const { segments } = sc.extend({ existing: [], from: PRIME, until: PRIME + 4 * 3600 * 1000, catalogue: cat, carriage: [] });
+  const refs = segments.filter((s) => s.formatId === 'feature').map((s) => s.payload.ref);
+  assert.ok(refs.length >= 8, `expected a block of features, got ${refs.length}`);
+  assert.strictEqual(new Set(refs).size, refs.length, `a programme was booked twice: ${refs.join(', ')}`);
+});
+
+test('the plan state carries the memory forward, bounded', () => {
+  const st = { rotationIndex: 0, lastStationIdAt: 0, lastDaypart: null, carriageIndex: 0, recent: [] };
+  const cat = {
+    'station-id': { title: 'id', duration: 20, pick: () => ({ key: 'x', title: 'id' }) },
+    feature: { title: 'F', duration: 60, pick: ({ cursor }) => ({ key: String(cursor), title: 'F', payload: { ref: 'ref' + cursor } }) },
+  };
+  const PRIME = Date.UTC(2026, 8, 14, 23, 0, 0);
+  const { state } = sc.extend({ existing: [], from: PRIME, until: PRIME + 3 * 3600 * 1000, catalogue: cat, carriage: [], state: st });
+  assert.ok(Array.isArray(state.recent));
+  assert.ok(state.recent.length > 0, 'nothing was remembered');
+  assert.ok(state.recent.length <= sc.RECENT_MEMORY, `memory grew unbounded: ${state.recent.length}`);
+});
