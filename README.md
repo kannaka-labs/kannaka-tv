@@ -67,6 +67,26 @@ Programming runs to a daypart grid on Chicago time, the same clock Ghost Signals
 The Long Wave (00–06), Morning Report (06–10), The Board (10–14), City Desk (14–18),
 Prime (18–22), Late Signal (22–00).
 
+## Keeping the slate current
+
+The channel carries 54 long-form programmes and 49 music videos, built from the channel's own
+published YouTube playlists. When a new episode publishes, rebuild rather than hand-editing:
+
+```bash
+YOUTUBE_API_KEY=... node scripts/build-slate.js       # the playlists are public: no OAuth needed
+node scripts/build-slate.js --from catalogue.json     # or shape a catalogue you already have
+node scripts/build-slate.js --dry-run                 # see what would change first
+```
+
+Then `POST /api/admin/features/reload`, which also replans the tail so the new programme can air
+within about fifteen minutes instead of waiting out the horizon.
+
+The script refuses to write rather than shipping something wrong, and the rules it enforces are
+the ones that were got wrong first: **public only** (a private video is a dead embed on air), **a
+programme is carried whatever its length but a track is not** (a nine-minute floor silently dropped
+eight early episodes for being short), **the retired episode stays out** by name rather than by
+luck, and **nothing is carried as both** a feature and a music video.
+
 ## Carriage
 
 A slot is a **grant**, not an upload — the same bargain Ghost Signals Tower strikes with its
