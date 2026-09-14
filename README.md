@@ -60,12 +60,34 @@ sources.js ──▶ formats.js ──▶ schedule-core.js ──▶ transmitter
 | On the Shelf | A record from Ghost Signals Records on floor 3, playing |
 | Now on Ghost Signals Radio | The live station, carried |
 | The Long Wave | The overnight visual, breathing at Φ |
-| Feature | Long-form carried by reference |
+| The Gallery | What the citizens painted today, full frame, everyone else credited |
+| Feature | Long-form carried by reference — 54 programmes, 16 hours |
+| Music Video | Short-form, carried by reference — 49 tracks. Brings its own sound, so no bed |
 | Carriage | Somebody else's programming |
 
 Programming runs to a daypart grid on Chicago time, the same clock Ghost Signals Radio keeps:
 The Long Wave (00–06), Morning Report (06–10), The Board (10–14), City Desk (14–18),
 Prime (18–22), Late Signal (22–00).
+
+## Keeping the slate current
+
+The channel carries 54 long-form programmes and 49 music videos, built from the channel's own
+published YouTube playlists. When a new episode publishes, rebuild rather than hand-editing:
+
+```bash
+YOUTUBE_API_KEY=... node scripts/build-slate.js       # the playlists are public: no OAuth needed
+node scripts/build-slate.js --from catalogue.json     # or shape a catalogue you already have
+node scripts/build-slate.js --dry-run                 # see what would change first
+```
+
+Then `POST /api/admin/features/reload`, which also replans the tail so the new programme can air
+within about fifteen minutes instead of waiting out the horizon.
+
+The script refuses to write rather than shipping something wrong, and the rules it enforces are
+the ones that were got wrong first: **public only** (a private video is a dead embed on air), **a
+programme is carried whatever its length but a track is not** (a nine-minute floor silently dropped
+eight early episodes for being short), **the retired episode stays out** by name rather than by
+luck, and **nothing is carried as both** a feature and a music video.
 
 ## Carriage
 
@@ -104,7 +126,7 @@ SSO, NATS swarm identity and email claims are named in the ADR and refuse rather
 
 ```bash
 npm install
-npm test          # 98 tests, no network required
+npm test          # 133 tests, no network required
 npm start         # 127.0.0.1:8891
 ```
 
@@ -117,6 +139,7 @@ npm start         # 127.0.0.1:8891
 | `TV_HORIZON_MINUTES` | `360` | How far ahead the transmitter plans |
 | `KAX_TOWER_STOREY` / `KAX_TOWER_CREDENTIAL` | — | The office. Inert until leased |
 | `TOWER_WEBHOOK_SECRET` | — | Floor events. The receiver 503s until set |
+| `OPENBOTCITY_JWT` | — | The Gallery format. Dark without it |
 
 ## Two rules the code enforces rather than states
 
@@ -124,6 +147,11 @@ npm start         # 127.0.0.1:8891
 none rejects. A format whose source is dark drops out of the rotation rather than airing empty, and
 if every source is dark the channel falls back to the test card. It does not stall and it does not
 go off air. (Borrowed from `kannaka-lens`, where the same rule lives in `contract.py`.)
+
+**A station does not shuffle its back catalogue.** The air log records which programme aired, and
+the picker takes the least-recently-aired quarter — so a slate of a hundred gets played rather than
+sampled. A planning pass also remembers what it has already booked, because the air log only knows
+what has *transmitted*: without that memory one evening carried the same episode three times.
 
 **Append-only protects what has been transmitted or announced — not the whole rundown.** A rebuild
 extends the horizon and never touches a segment that has started. A programming change replans the
