@@ -60,6 +60,10 @@ const SCHEMA = [
      duration INTEGER NOT NULL,
      logged_at TEXT NOT NULL
    )`,
+  // Which feature/record aired, so the planner can avoid repeating one while others never run.
+  // Guarded ALTER: an existing database picks it up on the next start.
+  `ALTER TABLE airlog ADD COLUMN ref TEXT`,
+  `CREATE INDEX IF NOT EXISTS airlog_ref ON airlog(ref, starts_at)`,
   `CREATE INDEX IF NOT EXISTS airlog_start ON airlog(starts_at)`,
   `CREATE INDEX IF NOT EXISTS airlog_grant ON airlog(grant_id, starts_at)`,
 

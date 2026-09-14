@@ -152,3 +152,55 @@ test('picking is deterministic for a given seed', () => {
     assert.deepStrictEqual(cat[id].pick(ctx(7)), cat[id].pick(ctx(7)), `${id} is not deterministic`);
   }
 });
+
+// ---------------------------------------------------------------- the slate
+
+test('the feature picker prefers what has not been on for longest', () => {
+  // With 54 features and two Prime slots a cycle, independent random picks repeat some episodes
+  // and never reach others. The air log is what stops that.
+  const feats = Array.from({ length: 12 }, (_, i) => ({
+    id: 'f' + i, title: 'Ep ' + i, ref: 'r' + i, provider: 'youtube', duration: 900, series: 'S',
+  }));
+  const lastAired = {};
+  feats.slice(0, 10).forEach((f, i) => (lastAired[f.ref] = 1_000 + i)); // r0..r9 aired; r10,r11 never
+
+  const cat = buildCatalogue(LIVE, { features: feats, lastAired });
+  const picked = new Set();
+  for (let seed = 1; seed < 40; seed++) picked.add(cat.feature.pick(ctx(seed)).payload.ref);
+
+  assert.ok(picked.has('r10') && picked.has('r11'), 'a never-aired programme was never chosen');
+  assert.ok(!picked.has('r9'), 'the most recently aired programme was chosen again');
+});
+
+test('with nothing aired yet every feature is reachable', () => {
+  const feats = Array.from({ length: 8 }, (_, i) => ({
+    id: 'f' + i, title: 'Ep ' + i, ref: 'r' + i, provider: 'youtube', duration: 900, series: 'S',
+  }));
+  const cat = buildCatalogue(LIVE, { features: feats, lastAired: {} });
+  const picked = new Set();
+  for (let seed = 1; seed < 60; seed++) picked.add(cat.feature.pick(ctx(seed)).payload.ref);
+  assert.ok(picked.size > 1, 'a cold slate collapsed onto one programme');
+});
+
+test('a feature carries its ref, so the air log can record WHICH programme aired', () => {
+  const cat = buildCatalogue(LIVE, {
+    features: [{ id: 'f', title: 'T', ref: 'abcdefghijk', provider: 'youtube', duration: 900, series: 'Ghost Signals' }],
+  });
+  const item = cat.feature.pick(ctx(3));
+  assert.strictEqual(item.payload.ref, 'abcdefghijk');
+  assert.strictEqual(item.payload.series, 'Ghost Signals');
+});
+
+test('the published slate is public-only and excludes the retired episode', () => {
+  const slate = require('../data/features.json');
+  assert.ok(slate.length > 40, `expected the full back catalogue, got ${slate.length}`);
+  for (const f of slate) {
+    assert.ok(/^[A-Za-z0-9_-]{11}$/.test(f.ref), `${f.id} has a malformed YouTube ref: ${f.ref}`);
+    assert.ok(f.duration > 0, `${f.id} has no duration`);
+    assert.ok(f.series, `${f.id} has no series`);
+  }
+  // GSP-007 was permanently retired from the station and must not return through the slate.
+  assert.ok(!slate.some((f) => f.episode === 'GSP-007'), 'the retired episode is being carried');
+  const refs = slate.map((f) => f.ref);
+  assert.strictEqual(new Set(refs).size, refs.length, 'the slate carries a duplicate video');
+});

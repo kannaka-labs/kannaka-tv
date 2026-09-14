@@ -45,7 +45,10 @@ async function rebuild() {
       carriage.airedToday(t),
     ]);
 
-    const catalogue = buildCatalogue(snap, { features: features.list() });
+    // Least-recently-aired programming wins the slot. Without this a 54-feature slate still
+    // repeats one episode while others never run, because each slot picks independently.
+    const lastAired = await lastAiredByRef();
+    const catalogue = buildCatalogue(snap, { features: features.list(), lastAired });
 
     // Carriage eligibility is resolved per daypart, so work out which daypart the horizon we are
     // about to plan actually falls in. Planning rarely spans more than two, and the planner
@@ -91,6 +94,20 @@ async function rebuild() {
   }
 }
 
+/** ref -> the most recent time it went out. Read from the air log, which is the durable record. */
+async function lastAiredByRef() {
+  try {
+    const rows = await db.all(
+      'SELECT ref, MAX(starts_at) AS last FROM airlog WHERE ref IS NOT NULL GROUP BY ref'
+    );
+    const out = {};
+    for (const r of rows) out[r.ref] = r.last;
+    return out;
+  } catch {
+    return {}; // never let a scheduling nicety break the transmitter
+  }
+}
+
 function prune(t) {
   const cutoff = t - config.keepPastMinutes * 60 * 1000;
   let i = 0;
@@ -113,8 +130,8 @@ async function logTransmitted(t) {
     try {
       const res = await db.run(
         `INSERT OR IGNORE INTO airlog
-           (segment_id, format_id, title, subtitle, daypart, grant_id, principal, starts_at, duration, logged_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?)`,
+           (segment_id, format_id, title, subtitle, daypart, grant_id, principal, starts_at, duration, logged_at, ref)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
         [
           s.id,
           s.formatId,
@@ -126,6 +143,7 @@ async function logTransmitted(t) {
           s.startsAt,
           s.duration,
           new Date().toISOString(),
+          (s.payload && (s.payload.ref || (s.payload.album && s.payload.album.publicId))) || null,
         ]
       );
       state.logged.add(s.id);
@@ -370,4 +388,4 @@ function stop() {
   feedTimer = null;
 }
 
-module.exports = { rebuild, replanTail, stateAfter, REPLAN_GRACE_MS, start, stop, onAir, nowPayload, guide, segmentById, status, publicSegment, resolveLive, state };
+module.exports = { rebuild, replanTail, stateAfter, lastAiredByRef, REPLAN_GRACE_MS, start, stop, onAir, nowPayload, guide, segmentById, status, publicSegment, resolveLive, state };
