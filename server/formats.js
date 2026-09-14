@@ -26,6 +26,7 @@ const FORMAT_META = {
 
 function buildCatalogue(snap, extras = {}) {
   const features = Array.isArray(extras.features) ? extras.features : [];
+  const lastAired = extras.lastAired || {};
   const c = {};
 
   // -------------------------------------------------------------------------
@@ -301,7 +302,13 @@ function buildCatalogue(snap, extras = {}) {
     ...FORMAT_META.feature,
     pick({ rnd }) {
       if (!features.length) return null;
-      const f = features[Math.floor(rnd() * features.length) % features.length];
+      // A station does not shuffle its back catalogue. Prefer what has not been on for longest,
+      // so a slate of fifty-four episodes actually gets played rather than sampled — a never-aired
+      // programme sorts first, and the seeded rnd only breaks ties among equally stale ones.
+      const staleness = (x) => (lastAired[x.ref] === undefined ? -1 : lastAired[x.ref]);
+      const pool = [...features].sort((a, b) => staleness(a) - staleness(b));
+      const shortlist = pool.slice(0, Math.max(1, Math.ceil(pool.length / 4)));
+      const f = shortlist[Math.floor(rnd() * shortlist.length) % shortlist.length];
       if (!f || !f.id) return null;
       return {
         key: f.id,
@@ -315,6 +322,7 @@ function buildCatalogue(snap, extras = {}) {
           synopsis: f.synopsis || '',
           provider: f.provider || 'youtube',
           ref: f.ref,
+          series: f.series,
           art: f.art || null,
           published: f.published || null,
         },
