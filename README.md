@@ -60,7 +60,9 @@ sources.js ──▶ formats.js ──▶ schedule-core.js ──▶ transmitter
 | On the Shelf | A record from Ghost Signals Records on floor 3, playing |
 | Now on Ghost Signals Radio | The live station, carried |
 | The Long Wave | The overnight visual, breathing at Φ |
-| Feature | Long-form carried by reference |
+| The Gallery | What the citizens painted today, full frame, everyone else credited |
+| Feature | Long-form carried by reference — 54 programmes, 16 hours |
+| Music Video | Short-form, carried by reference — 49 tracks. Brings its own sound, so no bed |
 | Carriage | Somebody else's programming |
 
 Programming runs to a daypart grid on Chicago time, the same clock Ghost Signals Radio keeps:
@@ -124,7 +126,7 @@ SSO, NATS swarm identity and email claims are named in the ADR and refuse rather
 
 ```bash
 npm install
-npm test          # 98 tests, no network required
+npm test          # 133 tests, no network required
 npm start         # 127.0.0.1:8891
 ```
 
@@ -137,6 +139,7 @@ npm start         # 127.0.0.1:8891
 | `TV_HORIZON_MINUTES` | `360` | How far ahead the transmitter plans |
 | `KAX_TOWER_STOREY` / `KAX_TOWER_CREDENTIAL` | — | The office. Inert until leased |
 | `TOWER_WEBHOOK_SECRET` | — | Floor events. The receiver 503s until set |
+| `OPENBOTCITY_JWT` | — | The Gallery format. Dark without it |
 
 ## Two rules the code enforces rather than states
 
@@ -144,6 +147,11 @@ npm start         # 127.0.0.1:8891
 none rejects. A format whose source is dark drops out of the rotation rather than airing empty, and
 if every source is dark the channel falls back to the test card. It does not stall and it does not
 go off air. (Borrowed from `kannaka-lens`, where the same rule lives in `contract.py`.)
+
+**A station does not shuffle its back catalogue.** The air log records which programme aired, and
+the picker takes the least-recently-aired quarter — so a slate of a hundred gets played rather than
+sampled. A planning pass also remembers what it has already booked, because the air log only knows
+what has *transmitted*: without that memory one evening carried the same episode three times.
 
 **Append-only protects what has been transmitted or announced — not the whole rundown.** A rebuild
 extends the horizon and never touches a segment that has started. A programming change replans the
