@@ -20,13 +20,27 @@ const FORMAT_META = {
   'the-long-wave': { title: 'The Long Wave', duration: 600, kind: 'music' },
   'the-gallery': { title: 'The Gallery', duration: 200, kind: 'data' },
   feature: { title: 'Feature', duration: 1500, kind: 'feature' },
+  'music-video': { title: 'Music Video', duration: 260, kind: 'feature' },
   'carriage-feed': { title: 'Carriage', duration: 180, kind: 'carriage' },
   'carriage-reference': { title: 'Carriage', duration: 300, kind: 'carriage' },
 };
 
 function buildCatalogue(snap, extras = {}) {
   const features = Array.isArray(extras.features) ? extras.features : [];
+  const musicVideos = Array.isArray(extras.music) ? extras.music : [];
   const lastAired = extras.lastAired || {};
+
+  // Both slates are chosen the same way: skip what this pass already booked, then take the
+  // stalest quarter and let the seeded rnd break ties. Written once so the two cannot drift.
+  const chooseFrom = (slate, recent, rnd) => {
+    if (!slate.length) return null;
+    const booked = new Set(recent || []);
+    const staleness = (x) => (lastAired[x.ref] === undefined ? -1 : lastAired[x.ref]);
+    const fresh = slate.filter((x) => !booked.has(x.ref));
+    const pool = (fresh.length ? fresh : slate).slice().sort((a, b) => staleness(a) - staleness(b));
+    const shortlist = pool.slice(0, Math.max(1, Math.ceil(pool.length / 4)));
+    return shortlist[Math.floor(rnd() * shortlist.length) % shortlist.length] || null;
+  };
   const c = {};
 
   // -------------------------------------------------------------------------
@@ -301,19 +315,9 @@ function buildCatalogue(snap, extras = {}) {
   c.feature = {
     ...FORMAT_META.feature,
     pick({ rnd, recent }) {
-      if (!features.length) return null;
-      // A station does not shuffle its back catalogue. Prefer what has not been on for longest,
-      // so a slate of fifty-four episodes actually gets played rather than sampled — a never-aired
-      // programme sorts first, and the seeded rnd only breaks ties among equally stale ones.
-      //
-      // `recent` is what THIS planning pass has already booked. The air log only knows what has
-      // transmitted, so without it one evening could carry the same episode three times.
-      const booked = new Set(recent || []);
-      const staleness = (x) => (lastAired[x.ref] === undefined ? -1 : lastAired[x.ref]);
-      const fresh = features.filter((x) => !booked.has(x.ref));
-      const pool = (fresh.length ? fresh : features).sort((a, b) => staleness(a) - staleness(b));
-      const shortlist = pool.slice(0, Math.max(1, Math.ceil(pool.length / 4)));
-      const f = shortlist[Math.floor(rnd() * shortlist.length) % shortlist.length];
+      // A station does not shuffle its back catalogue: prefer what has not been on for longest,
+      // and never book something this pass has already booked.
+      const f = chooseFrom(features, recent, rnd);
       if (!f || !f.id) return null;
       return {
         key: f.id,
@@ -332,6 +336,33 @@ function buildCatalogue(snap, extras = {}) {
           published: f.published || null,
         },
         links: f.url ? [{ label: 'Watch in full', url: f.url }] : [],
+      };
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Music Video — short-form, carried by reference. It brings its own sound, so no radio bed:
+  // the client pauses the bed whenever it embeds.
+  // -------------------------------------------------------------------------
+  c['music-video'] = {
+    ...FORMAT_META['music-video'],
+    pick({ rnd, recent }) {
+      const m = chooseFrom(musicVideos, recent, rnd);
+      if (!m || !m.ref) return null;
+      return {
+        key: m.ref,
+        title: m.album || 'Kannaka',
+        subtitle: m.track,
+        duration: Math.min(600, Math.max(60, Math.round(m.duration || 240) + 4)),
+        payload: {
+          artist: m.artist,
+          track: m.track,
+          album: m.album,
+          provider: m.provider || 'youtube',
+          ref: m.ref,
+          published: m.published || null,
+        },
+        links: m.url ? [{ label: 'Watch on YouTube', url: m.url }] : [],
       };
     },
   };

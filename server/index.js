@@ -146,6 +146,7 @@ async function route(req, res, url) {
       lastError: st.lastError,
       tower: tower.status(),
       features: features.list().length,
+      music: features.music().length,
       auth: auth.providers(),
       serverNow: st.serverNow,
     });
@@ -333,10 +334,10 @@ async function route(req, res, url) {
     }
 
     if (p === '/api/admin/features/reload' && method === 'POST') {
-      const n = features.reload().length;
+      const n = features.reload();
       // Reloading the slate is a programming change, so it replans the tail like any other —
       // otherwise a new feature waits out the whole committed horizon before it can air.
-      return send(res, 200, { ok: true, features: n, replan: await transmitter.replanTail('features reloaded') });
+      return send(res, 200, { ok: true, ...n, replan: await transmitter.replanTail('slate reloaded') });
     }
 
     if (p === '/api/admin/panel' && method === 'POST') {

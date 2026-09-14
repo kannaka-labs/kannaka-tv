@@ -178,6 +178,7 @@
     'the-long-wave': 'The Long Wave',
     'the-gallery': 'The Gallery',
     feature: 'Feature',
+    'music-video': 'Music Video',
     'carriage-feed': 'Carried programme',
     'carriage-reference': 'Carried programme',
   };
@@ -426,6 +427,13 @@
       if (ul.childNodes.length) side.appendChild(ul);
       sleeve.appendChild(side);
       root.appendChild(sleeve);
+    },
+
+    'music-video': function (p, seg, root) {
+      if (p.provider === 'youtube' && p.ref) return embed(p.ref, seg, root, p.track);
+      root.appendChild(text('p', 'p-kicker', p.album || p.artist || 'Kannaka'));
+      root.appendChild(text('h2', 'p-lead', p.track || seg.subtitle));
+      if (p.album) root.appendChild(text('p', 'p-body p-dim', 'From ' + p.album + '.'));
     },
 
     feature: function (p, seg, root) {
