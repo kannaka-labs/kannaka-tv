@@ -42,8 +42,8 @@ test('every catalogue entry has metadata and a kind', () => {
 });
 
 test('with live sources, every house format has something to say', () => {
-  const cat = buildCatalogue(LIVE, { features: [{ id: 'f1', title: 'A Feature', ref: 'abcdefghijk', provider: 'youtube', duration: 900 }] });
-  for (const id of ['station-id', 'consciousness-now', 'the-board', 'city-desk', 'dream-digest', 'on-the-shelf', 'now-on-the-radio', 'the-long-wave', 'the-gallery', 'feature']) {
+  const cat = buildCatalogue(LIVE, { features: [{ id: 'f1', title: 'A Feature', ref: 'abcdefghijk', provider: 'youtube', duration: 900 }], music: [{ id: 'm1', track: 'A Track', album: 'AN ALBUM', ref: 'bbcdefghijk', provider: 'youtube', duration: 240 }] });
+  for (const id of ['station-id', 'consciousness-now', 'the-board', 'city-desk', 'dream-digest', 'on-the-shelf', 'now-on-the-radio', 'the-long-wave', 'the-gallery', 'feature', 'music-video']) {
     const item = cat[id].pick(ctx());
     assert.ok(item, `${id} refused to air with live data`);
     assert.ok(item.title, `${id} produced no title`);
@@ -203,4 +203,66 @@ test('the published slate is public-only and excludes the retired episode', () =
   assert.ok(!slate.some((f) => f.episode === 'GSP-007'), 'the retired episode is being carried');
   const refs = slate.map((f) => f.ref);
   assert.strictEqual(new Set(refs).size, refs.length, 'the slate carries a duplicate video');
+});
+
+test('a music video brings its own sound, so it carries no radio bed', () => {
+  // The client pauses the audio bed whenever it embeds; a bed here would be two tracks at once.
+  const cat = buildCatalogue(LIVE, {
+    music: [{ id: 'm', track: 'Small Rooms', album: 'WHAT PERSISTED', ref: 'abcdefghijk', provider: 'youtube', duration: 250 }],
+  });
+  const item = cat['music-video'].pick(ctx(1));
+  assert.ok(item, 'the music slate did not air');
+  assert.ok(!item.bed, 'a music video was given a radio bed');
+  assert.strictEqual(item.payload.ref, 'abcdefghijk');
+  assert.strictEqual(item.title, 'WHAT PERSISTED');
+  assert.strictEqual(item.subtitle, 'Small Rooms');
+});
+
+test('an empty music slate drops the format out of the rotation', () => {
+  assert.strictEqual(buildCatalogue(LIVE, { music: [] })['music-video'].pick(ctx(1)), null);
+  assert.strictEqual(buildCatalogue(LIVE, {})['music-video'].pick(ctx(1)), null);
+});
+
+test('the music slate is public refs only and never overlaps the feature slate', () => {
+  const music = require('../data/music.json');
+  const features = require('../data/features.json');
+  const carried = new Set(features.map((f) => f.ref));
+  assert.ok(music.length > 20, `expected the music catalogue, got ${music.length}`);
+  for (const m of music) {
+    assert.ok(/^[A-Za-z0-9_-]{11}$/.test(m.ref), `${m.id} has a malformed ref: ${m.ref}`);
+    assert.ok(m.track, `${m.id} has no track name`);
+    assert.ok(m.duration > 0 && m.duration <= 9 * 60, `${m.id} is not short-form: ${m.duration}s`);
+    assert.ok(!carried.has(m.ref), `${m.ref} is carried as BOTH a feature and a music video`);
+  }
+  const refs = music.map((m) => m.ref);
+  assert.strictEqual(new Set(refs).size, refs.length, 'the music slate carries a duplicate video');
+});
+
+test('both slates skip what the pass has already booked (the real chooser, not a fixture)', () => {
+  // schedule.test.js covers this with its own hand-written pick(); this one exercises the
+  // chooser that actually ships, for both slates, so the two cannot drift apart.
+  const mk = (n, p) => Array.from({ length: n }, (_, i) => ({ id: p + i, ref: (p + i).padEnd(11, 'x'), title: 'T' + i, track: 'T' + i, duration: 300 }));
+  const features = mk(8, 'f');
+  const music = mk(8, 'm');
+  const cat = buildCatalogue(LIVE, { features, music, lastAired: {} });
+
+  for (const [fmt, slate] of [['feature', features], ['music-video', music]]) {
+    // Book everything except one; the chooser must return the one left.
+    const recent = slate.slice(0, slate.length - 1).map((x) => x.ref);
+    const only = slate[slate.length - 1].ref;
+    for (let seed = 1; seed < 12; seed++) {
+      const item = cat[fmt].pick({ ...ctx(seed), recent });
+      assert.strictEqual(item.payload.ref, only, `${fmt} booked something already in recent (seed ${seed})`);
+    }
+  }
+});
+
+test('when everything is booked a slate still airs rather than going dark', () => {
+  const slate = [{ id: 'a', ref: 'aaaaaaaaaaa', title: 'A', track: 'A', duration: 300 }];
+  const cat = buildCatalogue(LIVE, { features: slate, music: slate, lastAired: {} });
+  for (const fmt of ['feature', 'music-video']) {
+    const item = cat[fmt].pick({ ...ctx(1), recent: ['aaaaaaaaaaa'] });
+    assert.ok(item, `${fmt} went dark when its whole slate was already booked`);
+    assert.strictEqual(item.payload.ref, 'aaaaaaaaaaa');
+  }
 });

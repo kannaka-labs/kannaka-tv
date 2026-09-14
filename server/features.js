@@ -11,8 +11,11 @@ const config = require('./config');
 
 const REPO_FILE = path.join(__dirname, '..', 'data', 'features.json');
 const OPERATOR_FILE = path.join(config.dataDir, 'features.json');
+const MUSIC_REPO_FILE = path.join(__dirname, '..', 'data', 'music.json');
+const MUSIC_OPERATOR_FILE = path.join(config.dataDir, 'music.json');
 
 let cache = { at: 0, list: [] };
+let musicCache = { at: 0, list: [] };
 const TTL_MS = 60_000;
 
 const YT = /^[A-Za-z0-9_-]{11}$/;
@@ -64,9 +67,37 @@ function list() {
   return merged;
 }
 
-function reload() {
-  cache = { at: 0, list: [] };
-  return list();
+/** The music-video slate: short-form, carried by reference, same rules as the long-form one. */
+function music() {
+  const now = Date.now();
+  if (now - musicCache.at < TTL_MS) return musicCache.list;
+  const merged = [];
+  const seen = new Set();
+  for (const m of [...readFile(MUSIC_REPO_FILE), ...readFile(MUSIC_OPERATOR_FILE)]) {
+    if (!m || typeof m !== 'object' || !m.ref || !m.track) continue;
+    if (String(m.provider || 'youtube') === 'youtube' && !YT.test(String(m.ref))) continue;
+    if (seen.has(m.ref)) continue;
+    seen.add(m.ref);
+    merged.push({
+      id: String(m.id || m.ref),
+      artist: String(m.artist || 'Kannaka'),
+      track: String(m.track),
+      album: m.album ? String(m.album) : null,
+      provider: String(m.provider || 'youtube'),
+      ref: String(m.ref),
+      url: m.url ? String(m.url) : null,
+      duration: Number(m.duration) || 240,
+      published: m.published || null,
+    });
+  }
+  musicCache = { at: now, list: merged };
+  return merged;
 }
 
-module.exports = { list, reload, REPO_FILE, OPERATOR_FILE };
+function reload() {
+  cache = { at: 0, list: [] };
+  musicCache = { at: 0, list: [] };
+  return { features: list().length, music: music().length };
+}
+
+module.exports = { list, music, reload, REPO_FILE, OPERATOR_FILE, MUSIC_REPO_FILE, MUSIC_OPERATOR_FILE };

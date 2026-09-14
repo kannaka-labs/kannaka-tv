@@ -48,7 +48,7 @@ async function rebuild() {
     // Least-recently-aired programming wins the slot. Without this a 54-feature slate still
     // repeats one episode while others never run, because each slot picks independently.
     const lastAired = await lastAiredByRef();
-    const catalogue = buildCatalogue(snap, { features: features.list(), lastAired });
+    const catalogue = buildCatalogue(snap, { features: features.list(), music: features.music(), lastAired });
 
     // Carriage eligibility is resolved per daypart, so work out which daypart the horizon we are
     // about to plan actually falls in. Planning rarely spans more than two, and the planner

@@ -17,7 +17,7 @@ const DAYPARTS = [
     start: 0,
     end: 6,
     mood: 'contemplative',
-    rotation: ['the-long-wave', 'consciousness-now', 'dream-digest', 'the-long-wave', 'on-the-shelf'],
+    rotation: ['the-long-wave', 'music-video', 'consciousness-now', 'dream-digest', 'music-video', 'the-long-wave', 'on-the-shelf'],
     carriageEvery: 5,
   },
   {
@@ -26,7 +26,7 @@ const DAYPARTS = [
     start: 6,
     end: 10,
     mood: 'briefing',
-    rotation: ['dream-digest', 'the-board', 'consciousness-now', 'city-desk', 'now-on-the-radio'],
+    rotation: ['dream-digest', 'the-board', 'consciousness-now', 'music-video', 'city-desk', 'now-on-the-radio'],
     carriageEvery: 4,
   },
   {
@@ -62,7 +62,7 @@ const DAYPARTS = [
     start: 22,
     end: 24,
     mood: 'strange',
-    rotation: ['consciousness-now', 'the-gallery', 'dream-digest', 'the-long-wave', 'on-the-shelf'],
+    rotation: ['consciousness-now', 'music-video', 'the-gallery', 'dream-digest', 'the-long-wave', 'music-video', 'on-the-shelf'],
     carriageEvery: 4,
   },
 ];
