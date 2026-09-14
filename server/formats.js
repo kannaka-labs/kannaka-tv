@@ -300,13 +300,18 @@ function buildCatalogue(snap, extras = {}) {
   // -------------------------------------------------------------------------
   c.feature = {
     ...FORMAT_META.feature,
-    pick({ rnd }) {
+    pick({ rnd, recent }) {
       if (!features.length) return null;
       // A station does not shuffle its back catalogue. Prefer what has not been on for longest,
       // so a slate of fifty-four episodes actually gets played rather than sampled — a never-aired
       // programme sorts first, and the seeded rnd only breaks ties among equally stale ones.
+      //
+      // `recent` is what THIS planning pass has already booked. The air log only knows what has
+      // transmitted, so without it one evening could carry the same episode three times.
+      const booked = new Set(recent || []);
       const staleness = (x) => (lastAired[x.ref] === undefined ? -1 : lastAired[x.ref]);
-      const pool = [...features].sort((a, b) => staleness(a) - staleness(b));
+      const fresh = features.filter((x) => !booked.has(x.ref));
+      const pool = (fresh.length ? fresh : features).sort((a, b) => staleness(a) - staleness(b));
       const shortlist = pool.slice(0, Math.max(1, Math.ceil(pool.length / 4)));
       const f = shortlist[Math.floor(rnd() * shortlist.length) % shortlist.length];
       if (!f || !f.id) return null;
