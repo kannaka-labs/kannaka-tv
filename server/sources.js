@@ -17,7 +17,7 @@ const HOSTS = {
   kax: process.env.TV_KAX_BASE || 'https://kax.ninja-portal.com',
   records: process.env.TV_RECORDS_BASE || 'https://records.ninja-portal.com',
   portal: process.env.TV_PORTAL_BASE || 'https://ninja-portal.com',
-  jev: process.env.TV_JEV_BASE || 'https://jev.ninja-portal.com',
+  jev: process.env.TV_JEV_BASE || 'https://jev-production.up.railway.app',
 };
 
 const cache = new Map(); // key -> { at, value }
