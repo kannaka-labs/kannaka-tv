@@ -17,6 +17,7 @@ const HOSTS = {
   kax: process.env.TV_KAX_BASE || 'https://kax.ninja-portal.com',
   records: process.env.TV_RECORDS_BASE || 'https://records.ninja-portal.com',
   portal: process.env.TV_PORTAL_BASE || 'https://ninja-portal.com',
+  jev: process.env.TV_JEV_BASE || 'https://jev.ninja-portal.com',
 };
 
 const cache = new Map(); // key -> { at, value }
@@ -306,9 +307,70 @@ function int(v) {
   return Number.isFinite(n) ? Math.round(n) : null;
 }
 
+// ---------------------------------------------------------------------------
+// Jev the Band — the improvising jam band on floor 4 of nothing in particular.
+//
+// Recordings only, deliberately. A live room is a different bed (a stream, like the radio) and
+// needs an encoder that this box does not have. An ended jam is already an MP3 sitting at a URL,
+// which is exactly what ADR-0001 decision 2 says programming should be: carried by reference,
+// never copied here.
+//
+// Cached long. The archive changes when a jam ends, which is a handful of times a day at most.
+// ---------------------------------------------------------------------------
+
+function jev() {
+  return cached('jev', 300_000, async () => {
+    const list = await getJson(HOSTS.jev + '/api/archive');
+    const jams = (Array.isArray(list) ? list : [])
+      // `from`/`to` split one jam across midnight, so the same id can appear twice. The first is
+      // the whole recording; the later slice would play the same audio from the same offset.
+      .filter((j, i, all) => all.findIndex((x) => x.id === j.id) === i)
+      .filter((j) => j && j.status === 'ended' && j.id && j.startedAt)
+      .map((j) => {
+        const endedAt = int(j.endedAt) || int(j.startedAt);
+        const startedAt = int(j.startedAt);
+        return {
+          id: String(j.id),
+          title: String(j.title || j.prompt || 'Untitled jam').slice(0, 140),
+          prompt: j.prompt ? String(j.prompt).slice(0, 400) : null,
+          startedAt,
+          endedAt,
+          durationSeconds: Math.max(0, Math.round((endedAt - startedAt) / 1000)),
+          // A song cue carries the prompt it was asked for and when the band actually began it.
+          songs: (Array.isArray(j.songs) ? j.songs : [])
+            .filter((c) => c && c.appliedAt)
+            .map((c) => ({
+              prompt: String(c.prompt || '').slice(0, 140),
+              // Seconds into the recording, which is what the on-air clock can compare against.
+              at: Math.max(0, Math.round((int(c.appliedAt) - startedAt) / 1000)),
+            }))
+            .sort((a, b) => a.at - b.at)
+            .slice(0, 8),
+          audioUrl: HOSTS.jev + '/api/archive/' + encodeURIComponent(j.id) + '/audio',
+          page: HOSTS.jev + '/?archive=' + encodeURIComponent(j.id),
+        };
+      })
+      // A jam shorter than a minute is a false start, not a performance.
+      .filter((j) => j.durationSeconds >= 60)
+      .sort((a, b) => b.startedAt - a.startedAt)
+      .slice(0, 24);
+    if (!jams.length) throw new Error('no ended jams with a usable length');
+    return { ok: true, jams };
+  });
+}
+
 function snapshot() {
-  return Promise.all([consciousness(), markets(), radio(), records(), city(), dreams(), gallery()]).then(
-    ([consciousness, markets, radio, records, city, dreams, gallery]) => ({
+  return Promise.all([
+    consciousness(),
+    markets(),
+    radio(),
+    records(),
+    city(),
+    dreams(),
+    gallery(),
+    jev(),
+  ]).then(
+    ([consciousness, markets, radio, records, city, dreams, gallery, jev]) => ({
       consciousness,
       markets,
       radio,
@@ -316,6 +378,7 @@ function snapshot() {
       city,
       dreams,
       gallery,
+      jev,
       at: Date.now(),
     })
   );
@@ -325,4 +388,4 @@ function clearCache() {
   cache.clear();
 }
 
-module.exports = { consciousness, markets, radio, records, city, dreams, gallery, snapshot, clearCache, cleanDream, HOSTS };
+module.exports = { consciousness, markets, radio, records, city, dreams, gallery, jev, snapshot, clearCache, cleanDream, HOSTS };

@@ -541,3 +541,59 @@ a { color: inherit; }
 .notice[data-kind="good"] { border-left-color: var(--yellow); background: rgba(216, 192, 74, 0.07); }
 
 code, .mono { font-family: var(--mono); font-size: 0.92em; }
+
+/* ---------------------------------------------------------------- Jev the Band
+   Six players, each in the colour its own persona carries in the band's source, so the
+   channel draws them the way they draw themselves. --player is set per element by the
+   renderer; it is the one place a programme brings its own palette into the raster. */
+
+.band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(6px, 1vw, 12px);
+  margin: clamp(12px, 2vw, 20px) 0 0;
+}
+.band__player {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: clamp(5px, 0.8vw, 9px) clamp(8px, 1.2vw, 14px);
+  border-left: 3px solid var(--player, var(--dim));
+  background: color-mix(in srgb, var(--player, var(--dim)) 9%, transparent);
+  min-width: 0;
+}
+.band__name {
+  font-family: var(--narrow);
+  letter-spacing: 0.1em;
+  font-size: clamp(0.82rem, 1.3vw, 1rem);
+  color: var(--player, var(--bone));
+}
+.band__instrument {
+  font-size: clamp(0.62rem, 0.95vw, 0.76rem);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.setlist { list-style: none; margin: clamp(14px, 2vw, 22px) 0 0; padding: 0; }
+.setlist__item {
+  display: flex;
+  gap: clamp(8px, 1.4vw, 16px);
+  align-items: baseline;
+  padding: clamp(4px, 0.7vw, 8px) 0;
+  border-bottom: 1px solid var(--rack-line);
+  color: var(--dim);
+}
+.setlist__item:last-child { border-bottom: none; }
+.setlist__at {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86em;
+  color: var(--dim);
+  flex: none;
+}
+.setlist__prompt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The song actually sounding. Cyan is this channel's data colour and it already means
+   "this is the live value", which is exactly what it means here. */
+.setlist__item--now { color: var(--bone); }
+.setlist__item--now .setlist__prompt { color: var(--cyan); }
+.setlist__item--now .setlist__at { color: var(--cyan); }

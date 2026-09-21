@@ -19,6 +19,7 @@ function catalogue(opts = {}) {
     'dream-digest': mk('dream-digest', 180, opts.dreams !== false),
     'on-the-shelf': mk('on-the-shelf', 300, opts.records !== false),
     'now-on-the-radio': mk('now-on-the-radio', 120, opts.radio !== false),
+    'jev-the-band': mk('jev-the-band', 300, opts.jev !== false),
     'the-long-wave': mk('the-long-wave', 600, opts.radio !== false),
     'the-gallery': mk('the-gallery', 200, opts.gallery !== false),
     'music-video': mk('music-video', 260, opts.music !== false),
