@@ -140,3 +140,93 @@ test('the band DOES air in Prime once the archive has a jam', () => {
     assert.equal(seg.duration, 300);
   }
 });
+
+// ---------------------------------------------------------------------------
+// The source, with the network stubbed.
+//
+// `status: 'ended'` does not mean there is anything to play: the band renders
+// its MP3 afterwards and that took about 160 seconds when measured, while the
+// jam appears in the listing the instant it ends. Nothing in the listing says
+// which. These pin that the source asks before it offers.
+// ---------------------------------------------------------------------------
+
+const sources = require('../server/sources');
+
+/** Serve one archive listing, and decide per-jam whether its audio exists. */
+function stubNetwork(rows, audioFor) {
+  const real = globalThis.fetch;
+  const asked = [];
+  globalThis.fetch = async (url, init) => {
+    const u = String(url);
+    if (u.endsWith('/api/archive'))
+      return new Response(JSON.stringify(rows), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    const m = /\/api\/archive\/([^/]+)\/audio$/.exec(u);
+    if (m) {
+      asked.push({ id: m[1], range: init && init.headers && init.headers.range });
+      return audioFor(m[1])
+        ? new Response('x'.repeat(64), { status: 206 })
+        : new Response('not ready', { status: 404 });
+    }
+    throw new Error('unexpected fetch ' + u);
+  };
+  return { asked, restore: () => { globalThis.fetch = real; } };
+}
+
+const row = (id, over = {}) => ({
+  id,
+  title: 'Jam ' + id,
+  prompt: 'a theme',
+  mode: 'live',
+  status: 'ended',
+  startedAt: Date.UTC(2026, 8, 21, 2, 0, 0),
+  endedAt: Date.UTC(2026, 8, 21, 2, 6, 0),
+  songs: [],
+  ...over,
+});
+
+test('a jam whose audio has not rendered yet is not offered', async (t) => {
+  sources.clearCache();
+  const net = stubNetwork([row('ready'), row('still-rendering')], (id) => id === 'ready');
+  t.after(() => { net.restore(); sources.clearCache(); });
+
+  const j = await sources.jev();
+  assert.equal(j.ok, true);
+  assert.deepEqual(j.jams.map((x) => x.id), ['ready'], 'only the playable jam is offered');
+  assert.equal(net.asked.length, 2, 'every candidate is asked');
+  for (const a of net.asked)
+    assert.equal(a.range, 'bytes=0-1023', 'asks for a kilobyte, not a five-megabyte file');
+});
+
+test('when nothing has rendered the source goes dark rather than offering silence', async (t) => {
+  sources.clearCache();
+  const net = stubNetwork([row('a'), row('b')], () => false);
+  t.after(() => { net.restore(); sources.clearCache(); });
+
+  const j = await sources.jev();
+  assert.equal(j.ok, false, 'a dark source takes the format off air; it never airs a dead bed');
+});
+
+test('a false start is dropped before anything is asked of the network', async (t) => {
+  sources.clearCache();
+  const brief = row('brief', { endedAt: Date.UTC(2026, 8, 21, 2, 0, 30) }); // 30 seconds
+  const net = stubNetwork([brief, row('real')], () => true);
+  t.after(() => { net.restore(); sources.clearCache(); });
+
+  const j = await sources.jev();
+  assert.deepEqual(j.jams.map((x) => x.id), ['real']);
+  assert.deepEqual(net.asked.map((a) => a.id), ['real'], 'no probe is spent on a false start');
+});
+
+test('one jam split across midnight is one recording, not two', async (t) => {
+  sources.clearCache();
+  // The archive returns a row per day-slice, both carrying the same id.
+  const net = stubNetwork([row('split'), row('split')], () => true);
+  t.after(() => { net.restore(); sources.clearCache(); });
+
+  const j = await sources.jev();
+  assert.equal(j.jams.length, 1, 'the same jam is not offered twice');
+  assert.equal(net.asked.length, 1, 'nor probed twice');
+});

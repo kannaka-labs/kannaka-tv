@@ -355,8 +355,51 @@ function jev() {
       .sort((a, b) => b.startedAt - a.startedAt)
       .slice(0, 24);
     if (!jams.length) throw new Error('no ended jams with a usable length');
-    return { ok: true, jams };
+
+    // `status: 'ended'` does NOT mean there is anything to play. The band renders
+    // its MP3 after the fact, in a headless browser, and that took about 160
+    // seconds when measured on 2026-09-21 — while the jam appears in the archive
+    // the instant it ends. Nothing in the listing says which. Schedule one inside
+    // that window and the channel airs five minutes of silence under its own
+    // name, with every other signal looking correct.
+    //
+    // So each candidate is asked for its first kilobyte, and only the ones that
+    // answer are offered. It costs at most 24 range requests per cache period,
+    // they are cheap and outbound, and they run here rather than in `pick()`
+    // because the planner is synchronous and must never wait on a network.
+    const playable = (await Promise.all(jams.map((j) => hasAudio(j).then((ok) => (ok ? j : null)))))
+      .filter(Boolean);
+    if (!playable.length) throw new Error('no jam has rendered audio yet');
+    return { ok: true, jams: playable };
   });
+}
+
+/**
+ * Does this jam have audio to play yet?
+ *
+ * A range request for the first kilobyte: it proves the bytes exist without
+ * pulling a five-megabyte file to find out. Any failure answers no — an
+ * unreachable band is not a band worth scheduling, and the caller degrades to
+ * "no jams", which takes the format off air rather than breaking the channel.
+ */
+async function hasAudio(jam) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(jam.audioUrl, {
+      signal: ctl.signal,
+      headers: { range: 'bytes=0-1023', 'user-agent': 'KannakaTV/1.0' },
+    });
+    // 206 is the honest answer; 200 means the host ignored the range and is
+    // about to send the whole file, which still proves the audio is there.
+    if (res.status !== 206 && res.status !== 200) return false;
+    await res.arrayBuffer().catch(() => undefined);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 function snapshot() {
