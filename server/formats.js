@@ -21,6 +21,7 @@ const FORMAT_META = {
   'the-gallery': { title: 'The Gallery', duration: 200, kind: 'data' },
   feature: { title: 'Feature', duration: 1500, kind: 'feature' },
   'music-video': { title: 'Music Video', duration: 260, kind: 'feature' },
+  'jev-the-band': { title: 'Jev the Band', duration: 300, kind: 'music' },
   'carriage-feed': { title: 'Carriage', duration: 180, kind: 'carriage' },
   'carriage-reference': { title: 'Carriage', duration: 300, kind: 'carriage' },
 };
@@ -227,6 +228,58 @@ function buildCatalogue(snap, extras = {}) {
         },
         bed: { kind: 'track', url: track.url, title: track.title, duration: track.duration, gain: 1 },
         links: [{ label: 'Ghost Signals Records', url: 'https://records.ninja-portal.com' }],
+      };
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Jev the Band — an improvising band, carried from its own archive
+  // -------------------------------------------------------------------------
+  //
+  // Four model-driven musicians, a lighting desk and a front-of-house engineer, none of whom can
+  // hear anything but what the others have already played. Nobody writes the tune; it is the
+  // accumulated consequence of a few thousand small independent choices, which is why no two jams
+  // are the same and why the band is worth five minutes of a channel that hates repeats.
+  //
+  // The bed is the jam's own MP3 at its own host — carried by reference, never copied, which is
+  // the only way a box with one core and no GPU can put a band on air. `kind: 'track'` matters:
+  // the player seeks it to `seg.offset`, so a viewer tuning in three minutes late hears the band
+  // three minutes in rather than starting it over for themselves.
+  c['jev-the-band'] = {
+    ...FORMAT_META['jev-the-band'],
+    pick({ rnd, recent }) {
+      const j = snap.jev;
+      if (!j || !j.ok || !j.jams || !j.jams.length) return null;
+      // Prefer a jam this pass has not already booked; fall back rather than going dark.
+      const booked = new Set(recent || []);
+      const fresh = j.jams.filter((x) => !booked.has('jev:' + x.id));
+      const pool = fresh.length ? fresh : j.jams;
+      const jam = pool[Math.floor(rnd() * pool.length) % pool.length];
+      if (!jam) return null;
+      return {
+        key: 'jev:' + jam.id,
+        title: jam.title,
+        subtitle: 'Jev the Band, improvising',
+        payload: {
+          jamId: jam.id,
+          title: jam.title,
+          prompt: jam.prompt,
+          recordedAt: jam.startedAt,
+          durationSeconds: jam.durationSeconds,
+          songs: jam.songs,
+          // The band, in its own colours. These are the personas' own hex values, so the
+          // channel draws the band the way the band draws itself.
+          players: [
+            { name: 'ROOK', instrument: 'Guitar', colour: '#f4a66d' },
+            { name: 'MOSS', instrument: 'Bass', colour: '#c8ef79' },
+            { name: 'JUNE', instrument: 'Keys', colour: '#cbafff' },
+            { name: 'KIT', instrument: 'Drums', colour: '#7cdedc' },
+            { name: 'LUX', instrument: 'Lights', colour: '#f2eeab' },
+            { name: 'PATCH', instrument: 'Front of house', colour: '#e7cda1' },
+          ],
+        },
+        bed: { kind: 'track', url: jam.audioUrl, title: jam.title, gain: 1 },
+        links: [{ label: 'Jev the Band', url: jam.page }],
       };
     },
   };

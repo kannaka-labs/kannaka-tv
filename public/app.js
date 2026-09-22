@@ -45,6 +45,22 @@
 
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
+  /** Seconds as m:ss — the only clock a setlist needs. */
+  function clock(seconds) {
+    var t = Math.max(0, Math.round(Number(seconds) || 0));
+    return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+  }
+
+  /** A recording date, in words, without pretending to know the viewer's timezone. */
+  function when(at) {
+    var days = Math.floor((Date.now() - Number(at)) / 86400000);
+    if (!Number.isFinite(days) || days < 0) return '';
+    if (days === 0) return 'Recorded today.';
+    if (days === 1) return 'Recorded yesterday.';
+    return 'Recorded ' + days + ' days ago.';
+  }
+
+
   function num(v, p) {
     if (v === null || v === undefined || isNaN(Number(v))) return '—';
     return Number(v).toFixed(p === undefined ? 2 : p);
@@ -174,6 +190,7 @@
     'city-desk': 'City Desk',
     'dream-digest': 'Dream Digest',
     'on-the-shelf': 'On the Shelf',
+    'jev-the-band': 'Jev the Band',
     'now-on-the-radio': 'Ghost Signals Radio',
     'the-long-wave': 'The Long Wave',
     'the-gallery': 'The Gallery',
@@ -357,6 +374,49 @@
         ul.appendChild(li);
       });
       if (ul.childNodes.length) root.appendChild(ul);
+    },
+
+    // Six players who cannot hear anything but what the others already played. The picture is the
+    // band and the setlist; the sound is the jam's own recording, carried from its own host.
+    // Everything here is DOM on a one-core box: no canvas, no GPU, no per-frame work.
+    'jev-the-band': function (p, seg, root) {
+      root.appendChild(text('p', 'p-kicker', 'Improvised live · nobody wrote this down'));
+      root.appendChild(text('h2', 'p-lead', p.title || 'A jam'));
+
+      var band = text('div', 'band');
+      (p.players || []).forEach(function (pl) {
+        var d = text('div', 'band__player');
+        d.style.setProperty('--player', pl.colour || '#ccc');
+        d.appendChild(text('span', 'band__name', pl.name));
+        d.appendChild(text('span', 'band__instrument', pl.instrument));
+        band.appendChild(d);
+      });
+      if (band.childNodes.length) root.appendChild(band);
+
+      // Which song is up, worked out from where the segment is rather than from a stored guess:
+      // the cue times are seconds into the recording and seg.offset is where the bed is playing.
+      var songs = p.songs || [];
+      var elapsed = Math.max(0, Math.round(seg.offset || 0));
+      var current = -1;
+      for (var i = 0; i < songs.length; i++) if (songs[i].at <= elapsed) current = i;
+
+      if (songs.length) {
+        var ul = text('ul', 'setlist');
+        songs.forEach(function (song, i) {
+          var li = text('li', 'setlist__item' + (i === current ? ' setlist__item--now' : ''));
+          li.appendChild(text('span', 'setlist__at', clock(song.at)));
+          li.appendChild(text('span', 'setlist__prompt', song.prompt || 'Untitled'));
+          ul.appendChild(li);
+        });
+        root.appendChild(ul);
+      } else if (p.prompt) {
+        root.appendChild(text('p', 'p-body', p.prompt));
+      }
+
+      var meta = [];
+      if (p.durationSeconds) meta.push('Recorded over ' + clock(p.durationSeconds) + '.');
+      if (p.recordedAt) meta.push(when(p.recordedAt));
+      if (meta.length) root.appendChild(text('p', 'p-body p-dim', meta.join(' ')));
     },
 
     'on-the-shelf': function (p, seg, root) {
