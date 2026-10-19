@@ -111,6 +111,32 @@ When a carried segment airs, the submitter gets an **air report** — an HMAC-si
 `X-Tower-Signature: sha256=<hmac of exact body>` scheme the tower uses, with the same backoff. A
 broadcaster that cannot tell you that you aired is not a broadcaster.
 
+### Decision 3a (amendment, 2026-10-19) — Commercials: a break is a bumper between programmes
+
+The channel now carries **house commercials**: short spots Kannaka makes for the things we sell
+(a record, a shoe, a show). The first one, a 49-second spot for the Rogue Agent shoe, was refused
+by the carriage rules above, because a spot is neither a programme nor a 1-9-minute music video.
+This amendment adds the third kind of house programming and the rules it airs under.
+
+- **Source.** One YouTube playlist, *Commercials* (`PLJUJ9M0mw1rg`). Anything public in it between
+  10 and 90 seconds is a spot, and nothing in it is ever shaped as a programme or a track; a spot
+  outside that length is left out and the slate builder says so. Adding a spot is adding it to the
+  playlist and rebuilding the slate. `data/commercials.json` is the house list, reviewed in a PR
+  like the other two; the operator file beside it works the same way.
+- **Where.** A break airs only **between programmes**. The planner is only ever asked at a
+  programme boundary, so a break cannot split a feature or a song by construction, and a spot is
+  never carried as a programme. It is a house format, not carriage: no grant, no air report.
+- **How much.** A break is **one or two spots**, never a block; the second spot must be a different
+  spot or the break is one spot long. Breaks are at least **twenty minutes apart**, so an hour
+  carries at most three breaks and at most six spots. The rule is `planCommercial` in
+  `schedule-core.js`, and the test for it is written against mutants of each clause.
+- **Said so.** A spot is **labelled a commercial** on screen and in the lower third, and it is
+  **listed in the guide** under its own format. The agent track reads the same schedule as the
+  viewer; an agent must be able to tell a spot from programming, so a spot is not hidden from the
+  rundown. It is logged on transmission like everything else.
+- **Still not.** No third-party ad sales, no paid placement, no uploads: the non-goal below stands.
+  A commercial is house programming for something of ours, carried by reference like the rest.
+
 ## Decision 4 — Identity: one desk, many proofs
 
 "Any authed human or agent within the systems" is the requirement, and the systems do not share an
@@ -203,7 +229,8 @@ If a future version of Kannaka TV stops doing one of those, it has drifted.
 
 Live user-generated video. Uploads. Transcoding. A CDN. Comments. Real-money advertising (the radio
 owns ad sales; TV carriage is free while the channel is young, the same way the record studio's free
-door works). Multi-channel. DVR/seek. Any dependency that needs a GPU.
+door works; house commercials for our own things are programming, not ad sales — decision 3a).
+Multi-channel. DVR/seek. Any dependency that needs a GPU.
 
 ## Consequences and open risks
 

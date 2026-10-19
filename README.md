@@ -63,6 +63,7 @@ sources.js ──▶ formats.js ──▶ schedule-core.js ──▶ transmitter
 | The Gallery | What the citizens painted today, full frame, everyone else credited |
 | Feature | Long-form carried by reference — 54 programmes, 16 hours |
 | Music Video | Short-form, carried by reference — 49 tracks. Brings its own sound, so no bed |
+| Commercial | A house spot for something we sell, 10–90 s, from the Commercials playlist. One or two between programmes, breaks twenty minutes apart, labelled as a commercial on screen and in the guide |
 | Carriage | Somebody else's programming |
 
 Programming runs to a daypart grid on Chicago time, the same clock Ghost Signals Radio keeps:
@@ -82,6 +83,10 @@ node scripts/build-slate.js --dry-run                 # see what would change fi
 
 Then `POST /api/admin/features/reload`, which also replans the tail so the new programme can air
 within about fifteen minutes instead of waiting out the horizon.
+
+A **commercial** is the same move: put the spot (public, 10–90 s) in the *Commercials* playlist and
+rebuild. It lands in `data/commercials.json` and airs as a break between programmes. Nothing in that
+playlist is ever shaped as a programme or a track, whatever its title.
 
 The script refuses to write rather than shipping something wrong, and the rules it enforces are
 the ones that were got wrong first: **public only** (a private video is a dead embed on air), **a

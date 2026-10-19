@@ -60,6 +60,7 @@
       var li = document.createElement('li');
       li.setAttribute('data-onair', String(onAir));
       li.setAttribute('data-carriage', String(Boolean(s.carriage)));
+      li.setAttribute('data-format', s.format || '');
       li.appendChild(text('span', 'g-time', hhmm(s.startsAt)));
 
       var mid = text('span', 'g-title', s.title);

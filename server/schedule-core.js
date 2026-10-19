@@ -74,6 +74,15 @@ const STATION_ID_INTERVAL_S = 15 * 60;
 // twice in an evening. Long enough to cover a daypart's worth of feature slots.
 const RECENT_MEMORY = 16;
 
+// Commercial breaks (ADR-0001 decision 3a). A break is a bumper BETWEEN programmes: the planner is
+// only ever asked at a programme boundary, so a break can never split a feature or a song. It is
+// one or two spots, never a block, and breaks are kept apart so an hour carries at most three.
+const COMMERCIAL = 'commercial';
+const COMMERCIAL_BREAK_GAP_S = 20 * 60;
+const COMMERCIAL_SPOTS_PER_BREAK = 2;
+// Spots this pass has booked, newest first, so a break does not air the same spot twice.
+const COMMERCIAL_RECENT = 6;
+
 // ---------------------------------------------------------------------------
 // Chicago wall-clock hour without pulling in a timezone library.
 // Intl is in every Node 20 build we run on; if it ever is not, we degrade to UTC rather than throw,
@@ -169,6 +178,12 @@ function planOne({ cursor, state, catalogue, carriage }) {
     // TRANSMITTED, so without this a single planning pass happily books the same programme
     // three times in one hour — it did, before this existed.
     recent: Array.isArray(state.recent) ? state.recent : [],
+    // The break clock: when the last break opened, how many spots it has run, and what the
+    // previous segment was (a break only follows a programme, and only continues itself).
+    lastCommercialAt: state.lastCommercialAt || 0,
+    breakSpots: state.breakSpots | 0,
+    lastFormatId: state.lastFormatId || null,
+    recentSpots: Array.isArray(state.recentSpots) ? state.recentSpots : [],
   };
 
   // 1. Station identification — on a daypart turn, or when we have not identified in a while.
@@ -179,12 +194,18 @@ function planOne({ cursor, state, catalogue, carriage }) {
     if (seg) {
       return {
         segment: seg,
-        state: { ...st, lastStationIdAt: cursor, lastDaypart: dp.key },
+        state: { ...st, lastStationIdAt: cursor, lastDaypart: dp.key, lastFormatId: STATION_ID },
       };
     }
     // station-id is a house format with no external dependency; if it is missing we carry on
     // rather than stall the transmitter.
   }
+
+  // 1b. A commercial break. Either we are inside one (the previous segment was a spot and the break
+  //     has room for one more) or one is due (a programme just ended and the gap has elapsed). A
+  //     second spot must be a different spot; if there is none the break is one spot long.
+  const commercial = planCommercial({ cursor, st, dp, catalogue });
+  if (commercial) return commercial;
 
   // 2. Carriage gets the slot when its turn comes up and something is waiting.
   const carriageTurn = dp.carriageEvery > 0 && st.rotationIndex % dp.carriageEvery === 0;
@@ -206,6 +227,7 @@ function planOne({ cursor, state, catalogue, carriage }) {
           rotationIndex: st.rotationIndex + 1,
           carriageIndex: st.carriageIndex + 1,
           lastDaypart: dp.key,
+          lastFormatId: item.formatId,
         },
       };
     }
@@ -231,6 +253,7 @@ function planOne({ cursor, state, catalogue, carriage }) {
         ...st,
         rotationIndex: idx + 1,
         lastDaypart: dp.key,
+        lastFormatId: formatId,
         recent: ref ? [ref, ...st.recent].slice(0, RECENT_MEMORY) : st.recent,
       },
     };
@@ -251,7 +274,45 @@ function planOne({ cursor, state, catalogue, carriage }) {
     bed: null,
     carriage: null,
   };
-  return { segment: seg, state: { ...st, rotationIndex: st.rotationIndex + 1, lastDaypart: dp.key } };
+  return { segment: seg, state: { ...st, rotationIndex: st.rotationIndex + 1, lastDaypart: dp.key, lastFormatId: 'colour-bars' } };
+}
+
+/**
+ * Book a commercial spot at `cursor` if a break is open or due; null otherwise.
+ *
+ * The rule, and what each clause buys:
+ *   - `inBreak`: the previous segment was a spot and the break has run fewer than
+ *     COMMERCIAL_SPOTS_PER_BREAK, so one more may follow. The pick is STRICT: it must be a spot this
+ *     pass has not booked, or the break ends here. One spot twice in a row is not a break, it is a
+ *     stuck tape.
+ *   - `due`: the last break opened at least COMMERCIAL_BREAK_GAP_S ago. A break that has just
+ *     closed cannot reopen, because the gap is measured from its own start.
+ *   - Neither: a programme airs. A channel with no spots in the slate never reaches here.
+ */
+function planCommercial({ cursor, st, dp, catalogue }) {
+  const fmt = catalogue[COMMERCIAL];
+  if (!fmt || !fmt.pick) return null;
+  const inBreak = st.lastFormatId === COMMERCIAL && st.breakSpots < COMMERCIAL_SPOTS_PER_BREAK;
+  const due = cursor - st.lastCommercialAt >= COMMERCIAL_BREAK_GAP_S * 1000;
+  if (!inBreak && !due) return null;
+
+  const rnd = mulberry32(seedFor(cursor, COMMERCIAL));
+  const item = fmt.pick({ cursor, daypart: dp, rnd, recent: st.recentSpots, strict: inBreak });
+  if (!item) return null;
+  const seg = makeSegment({ cursor, formatId: COMMERCIAL, dp, catalogue, item });
+  if (!seg) return null;
+  const ref = seg.payload && seg.payload.ref;
+  return {
+    segment: seg,
+    state: {
+      ...st,
+      lastDaypart: dp.key,
+      lastFormatId: COMMERCIAL,
+      lastCommercialAt: inBreak ? st.lastCommercialAt : cursor,
+      breakSpots: inBreak ? st.breakSpots + 1 : 1,
+      recentSpots: ref ? [ref, ...st.recentSpots].slice(0, COMMERCIAL_RECENT) : st.recentSpots,
+    },
+  };
 }
 
 function makeSegment({ cursor, formatId, dp, catalogue, item, carriage }) {
@@ -295,7 +356,7 @@ function clampDuration(d) {
  */
 function extend({ existing, until, catalogue, carriage, state, from }) {
   const out = [];
-  let st = state || { rotationIndex: 0, lastStationIdAt: 0, lastDaypart: null, carriageIndex: 0 };
+  let st = state || { rotationIndex: 0, lastStationIdAt: 0, lastDaypart: null, carriageIndex: 0, lastCommercialAt: 0, breakSpots: 0, lastFormatId: null, recentSpots: [] };
   const last = existing && existing.length ? existing[existing.length - 1] : null;
   let cursor = last ? last.startsAt + last.duration * 1000 : from;
   if (!Number.isFinite(cursor)) throw new Error('extend needs `from` when `existing` is empty');
@@ -351,6 +412,11 @@ module.exports = {
   STATION_ID,
   STATION_ID_INTERVAL_S,
   RECENT_MEMORY,
+  COMMERCIAL,
+  COMMERCIAL_BREAK_GAP_S,
+  COMMERCIAL_SPOTS_PER_BREAK,
+  COMMERCIAL_RECENT,
+  planCommercial,
   chicagoHour,
   daypartAt,
   mulberry32,

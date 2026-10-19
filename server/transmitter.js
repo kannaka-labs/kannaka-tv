@@ -48,7 +48,7 @@ async function rebuild() {
     // Least-recently-aired programming wins the slot. Without this a 54-feature slate still
     // repeats one episode while others never run, because each slot picks independently.
     const lastAired = await lastAiredByRef();
-    const catalogue = buildCatalogue(snap, { features: features.list(), music: features.music(), lastAired });
+    const catalogue = buildCatalogue(snap, { features: features.list(), music: features.music(), commercials: features.commercials(), lastAired });
 
     // Carriage eligibility is resolved per daypart, so work out which daypart the horizon we are
     // about to plan actually falls in. Planning rarely spans more than two, and the planner
@@ -192,9 +192,21 @@ async function replanTail(reason) {
 // identification clock carry on from the last segment we kept rather than from wherever the old
 // tail had reached.
 function stateAfter(kept) {
-  if (!kept.length) return { rotationIndex: 0, lastStationIdAt: 0, lastDaypart: null, carriageIndex: 0 };
+  if (!kept.length) return { rotationIndex: 0, lastStationIdAt: 0, lastDaypart: null, carriageIndex: 0, lastCommercialAt: 0, breakSpots: 0, lastFormatId: null, recentSpots: [] };
   const last = kept[kept.length - 1];
   const lastIdent = [...kept].reverse().find((s) => s.formatId === 'station-id');
+  // The break clock, read back from the kept tail: when the last break OPENED (its first spot),
+  // how many spots the tail ends with, and which spots this stretch has already run.
+  let lastCommercialAt = 0;
+  let breakSpots = 0;
+  const recentSpots = [];
+  for (let i = 0; i < kept.length; i++) {
+    const s = kept[i];
+    if (s.formatId !== sc.COMMERCIAL) continue;
+    if (i === 0 || kept[i - 1].formatId !== sc.COMMERCIAL) lastCommercialAt = s.startsAt;
+    if (s.payload && s.payload.ref) recentSpots.unshift(s.payload.ref);
+  }
+  for (let i = kept.length - 1; i >= 0 && kept[i].formatId === sc.COMMERCIAL; i--) breakSpots++;
   const dp = sc.DAYPARTS.find((d) => d.key === last.daypart);
   let rotationIndex = 0;
   if (dp) {
@@ -206,6 +218,10 @@ function stateAfter(kept) {
     lastStationIdAt: lastIdent ? lastIdent.startsAt : 0,
     lastDaypart: last.daypart,
     carriageIndex: state.planState ? state.planState.carriageIndex | 0 : 0,
+    lastCommercialAt,
+    breakSpots,
+    lastFormatId: last.formatId,
+    recentSpots: recentSpots.slice(0, sc.COMMERCIAL_RECENT),
   };
 }
 

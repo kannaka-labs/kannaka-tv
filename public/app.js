@@ -196,6 +196,7 @@
     'the-gallery': 'The Gallery',
     feature: 'Feature',
     'music-video': 'Music Video',
+    commercial: 'Commercial',
     'carriage-feed': 'Carried programme',
     'carriage-reference': 'Carried programme',
   };
@@ -496,6 +497,13 @@
       if (p.album) root.appendChild(text('p', 'p-body p-dim', 'From ' + p.album + '.'));
     },
 
+    // A commercial is labelled as one, on screen and in the lower third, so nobody mistakes a spot
+    // for programming (ADR-0001 decision 3a).
+    commercial: function (p, seg, root) {
+      root.appendChild(text('p', 'commercial-tag', 'Commercial' + (p.sponsor ? ' \u2014 ' + p.sponsor : '')));
+      if (p.provider === 'youtube' && p.ref) return embed(p.ref, seg, root, p.title);
+      root.appendChild(text('h2', 'p-lead', p.title || seg.subtitle));
+    },
     feature: function (p, seg, root) {
       if (p.provider === 'youtube' && p.ref) return embed(p.ref, seg, root, p.title);
       root.appendChild(text('p', 'p-kicker', p.series || 'Feature'));
@@ -579,7 +587,7 @@
     nodes.mute.textContent = state.muted ? 'Sound off' : 'Mute';
     if (state.seg) {
       bed(state.seg);
-      if (state.seg.format === 'feature' || state.seg.format === 'carriage-reference') render(state.seg);
+      if (state.seg.format === 'feature' || state.seg.format === 'music-video' || state.seg.format === 'commercial' || state.seg.format === 'carriage-reference') render(state.seg);
     }
   });
 

@@ -41,7 +41,7 @@ test('stateAfter resumes the rotation and the identification clock from the kept
 
 test('stateAfter on an empty schedule is the cold-start state', () => {
   const st = transmitter.stateAfter([]);
-  assert.deepStrictEqual(st, { rotationIndex: 0, lastStationIdAt: 0, lastDaypart: null, carriageIndex: 0 });
+  assert.deepStrictEqual(st, { rotationIndex: 0, lastStationIdAt: 0, lastDaypart: null, carriageIndex: 0, lastCommercialAt: 0, breakSpots: 0, lastFormatId: null, recentSpots: [] });
 });
 
 // Introducing a carriage grant changes what the planner WOULD produce. Without it, replanning is
