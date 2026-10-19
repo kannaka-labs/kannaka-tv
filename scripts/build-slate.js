@@ -5,7 +5,8 @@
  *   node scripts/build-slate.js --from catalogue.json     # shape a catalogue you already have
  *   YOUTUBE_API_KEY=... node scripts/build-slate.js       # fetch the public playlists, then shape
  *
- * Writes data/features.json (long-form, Prime) and data/music.json (short-form, overnight).
+ * Writes data/features.json (long-form, Prime), data/music.json (short-form, overnight) and
+ * data/commercials.json (house spots, 10-90 s, aired as breaks between programmes).
  *
  * The fetching is the easy half. The rules below are the half that took a while and each one is
  * here because it was got wrong first:
@@ -20,6 +21,10 @@
  *   RETIRED STAYS OUT.  GSP-007 was permanently retired from the station. It is absent from the
  *                       playlist today; this keeps it out even if that changes.
  *   NO OVERLAP.         Nothing is carried as both a feature and a music video.
+ *   A SPOT IS A SPOT.   Anything in the Commercials playlist is a commercial and nothing else: a
+ *                       61-second spot is not a music video, and a spot never airs as a programme.
+ *                       Spots are 10-90 s; outside that it is left out and said so.
+ *                       A vertical (#Shorts) cut is left out too: the channel is 16:9.
  *
  * The catalogue file is an array of { playlist, items: [{ id, title, description, published,
  * seconds, privacy }] } — the shape `--from` expects and the shape the fetcher produces.
@@ -32,10 +37,15 @@ const https = require('node:https');
 const ROOT = path.join(__dirname, '..');
 const FEATURES_OUT = path.join(ROOT, 'data', 'features.json');
 const MUSIC_OUT = path.join(ROOT, 'data', 'music.json');
+const COMMERCIALS_OUT = path.join(ROOT, 'data', 'commercials.json');
 
 const MUSIC_MAX_SECONDS = 9 * 60; // longer than this is a feature and is carried as one
 const MUSIC_MIN_SECONDS = 60;     // a sting or a trailer is not a music video
 const RETIRED = new Set(['GSP-007']);
+const COMMERCIAL_MIN_SECONDS = 10;
+const COMMERCIAL_MAX_SECONDS = 90;
+// The Commercials playlist. House spots Kannaka makes for what we sell; nothing in it is programming.
+const COMMERCIALS_PLAYLIST = 'PLJUJ9M0mw1rg';
 
 // The channel's playlists. Public, so an API key is enough — no OAuth.
 const PLAYLISTS = [
@@ -167,13 +177,41 @@ function parseTrack(title, playlist) {
 function shape(cat) {
   const features = [];
   const music = [];
+  const commercials = [];
+  const leftOut = [];
   const seen = new Set();
 
   for (const p of cat) {
+    const isCommercials = p.playlistId === COMMERCIALS_PLAYLIST || /^commercials$/i.test(String(p.playlist || ''));
     for (const it of p.items || []) {
       if (!it.id || seen.has(it.id)) continue;
       if (it.privacy !== 'public') continue;
       if (!it.seconds) continue;
+
+      if (isCommercials) {
+        // A spot, and only a spot. Never shaped as a programme or a track whatever its title says.
+        if (it.seconds < COMMERCIAL_MIN_SECONDS || it.seconds > COMMERCIAL_MAX_SECONDS) {
+          leftOut.push(`${it.id} "${it.title}" is ${it.seconds}s; a spot is ${COMMERCIAL_MIN_SECONDS}-${COMMERCIAL_MAX_SECONDS}s`);
+          continue;
+        }
+        if (/#shorts/i.test(it.title)) {
+          // A vertical cut is for phones. On a 16:9 channel it airs as a strip between two bars.
+          leftOut.push(`${it.id} "${it.title}" is a vertical cut (#Shorts); the 16:9 cut airs`);
+          continue;
+        }
+        seen.add(it.id);
+        commercials.push({
+          id: it.id,
+          title: it.title.split('|')[0].trim() || it.title,
+          sponsor: (it.description || '').replace(/\s+/g, ' ').slice(0, 120) || null,
+          provider: 'youtube',
+          ref: it.id,
+          url: `https://www.youtube.com/watch?v=${it.id}`,
+          duration: it.seconds,
+          published: it.published || null,
+        });
+        continue;
+      }
 
       const { episode, title } = parseProgramme(it.title);
       if (episode && RETIRED.has(episode)) continue;
@@ -233,28 +271,34 @@ function shape(cat) {
   music.sort(
     (a, b) => String(a.album || 'zzz').localeCompare(String(b.album || 'zzz')) || String(a.track).localeCompare(String(b.track))
   );
-  return { features, music };
+  commercials.sort((a, b) => String(b.published).localeCompare(String(a.published)) || a.title.localeCompare(b.title));
+  return { features, music, commercials, leftOut };
 }
 
 // ---------------------------------------------------------------- checks
 
-function check(features, music) {
+function check(features, music, commercials = []) {
   const problems = [];
   const fRefs = new Set(features.map((f) => f.ref));
   for (const m of music) if (fRefs.has(m.ref)) problems.push(`${m.ref} is carried as BOTH a feature and a music video`);
   if (features.some((f) => f.episode && RETIRED.has(f.episode))) problems.push('a retired episode is being carried');
-  for (const x of [...features, ...music]) {
+  for (const x of [...features, ...music, ...commercials]) {
     if (!/^[A-Za-z0-9_-]{11}$/.test(x.ref)) problems.push(`${x.id} has a malformed YouTube ref: ${x.ref}`);
     if (!x.duration || x.duration <= 0) problems.push(`${x.id} has no duration`);
   }
-  const all = [...features, ...music].map((x) => x.ref);
+  for (const c of commercials) {
+    if (c.duration < COMMERCIAL_MIN_SECONDS || c.duration > COMMERCIAL_MAX_SECONDS) problems.push(`${c.id} is a ${c.duration}s commercial`);
+  }
+  const all = [...features, ...music, ...commercials].map((x) => x.ref);
   if (new Set(all).size !== all.length) problems.push('a video is carried twice');
   return problems;
 }
 
 // ---------------------------------------------------------------- main
 
-(async () => {
+module.exports = { shape, check, parseProgramme, parseTrack, PLAYLISTS, COMMERCIALS_PLAYLIST, COMMERCIAL_MIN_SECONDS, COMMERCIAL_MAX_SECONDS };
+
+if (require.main === module) (async () => {
   const argFrom = process.argv.indexOf('--from');
   let cat;
   if (argFrom > -1 && process.argv[argFrom + 1]) {
@@ -267,8 +311,8 @@ function check(features, music) {
     process.exit(2);
   }
 
-  const { features, music } = shape(cat);
-  const problems = check(features, music);
+  const { features, music, commercials, leftOut } = shape(cat);
+  const problems = check(features, music, commercials);
   if (problems.length) {
     console.error('REFUSING TO WRITE:');
     for (const p of problems) console.error('  ' + p);
@@ -279,6 +323,7 @@ function check(features, music) {
   if (!dry) {
     fs.writeFileSync(FEATURES_OUT, JSON.stringify(features, null, 2) + '\n');
     fs.writeFileSync(MUSIC_OUT, JSON.stringify(music, null, 2) + '\n');
+    fs.writeFileSync(COMMERCIALS_OUT, JSON.stringify(commercials, null, 2) + '\n');
   }
 
   const by = {};
@@ -287,6 +332,8 @@ function check(features, music) {
   console.log(`${dry ? '[dry run] ' : ''}features: ${features.length} (${hrs(features.reduce((n, f) => n + f.duration, 0))}h)`);
   for (const [s, n] of Object.entries(by)) console.log(`    ${String(n).padStart(3)}  ${s}`);
   console.log(`${dry ? '[dry run] ' : ''}music:    ${music.length} (${hrs(music.reduce((n, m) => n + m.duration, 0))}h)`);
+  console.log(`${dry ? '[dry run] ' : ''}commercials: ${commercials.length} (${commercials.reduce((n, c) => n + c.duration, 0)}s)`);
+  for (const l of leftOut) console.log(`    left out: ${l}`);
   const skipped = cat.flatMap((p) => p.items || []).filter((x) => x.privacy && x.privacy !== 'public').length;
   console.log(`\nleft out: ${skipped} not public`);
 })();

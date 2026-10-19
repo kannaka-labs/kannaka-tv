@@ -13,9 +13,12 @@ const REPO_FILE = path.join(__dirname, '..', 'data', 'features.json');
 const OPERATOR_FILE = path.join(config.dataDir, 'features.json');
 const MUSIC_REPO_FILE = path.join(__dirname, '..', 'data', 'music.json');
 const MUSIC_OPERATOR_FILE = path.join(config.dataDir, 'music.json');
+const COMMERCIALS_REPO_FILE = path.join(__dirname, '..', 'data', 'commercials.json');
+const COMMERCIALS_OPERATOR_FILE = path.join(config.dataDir, 'commercials.json');
 
 let cache = { at: 0, list: [] };
 let musicCache = { at: 0, list: [] };
+let commercialsCache = { at: 0, list: [] };
 const TTL_MS = 60_000;
 
 const YT = /^[A-Za-z0-9_-]{11}$/;
@@ -94,10 +97,41 @@ function music() {
   return merged;
 }
 
+/** The commercial slate: house spots, 10-90 s, carried by reference (ADR-0001 decision 3a). */
+function commercials() {
+  const now = Date.now();
+  if (now - commercialsCache.at < TTL_MS) return commercialsCache.list;
+  const merged = [];
+  const seen = new Set();
+  for (const s of [...readFile(COMMERCIALS_REPO_FILE), ...readFile(COMMERCIALS_OPERATOR_FILE)]) {
+    if (!s || typeof s !== 'object' || !s.ref || !s.title) continue;
+    if (String(s.provider || 'youtube') === 'youtube' && !YT.test(String(s.ref))) continue;
+    if (seen.has(s.ref)) continue;
+    // A spot outside 10-90 s is not a spot. Demand an actual number: `Number(null)` is 0 and
+    // `Number(x) || default` would wave a missing duration through as a thirty-second default.
+    const d = typeof s.duration === 'number' ? s.duration : Number(s.duration);
+    if (!Number.isFinite(d) || d < 10 || d > 90) continue;
+    seen.add(s.ref);
+    merged.push({
+      id: String(s.id || s.ref),
+      title: String(s.title),
+      sponsor: s.sponsor ? String(s.sponsor) : null,
+      provider: String(s.provider || 'youtube'),
+      ref: String(s.ref),
+      url: s.url ? String(s.url) : null,
+      duration: Math.round(d),
+      published: s.published || null,
+    });
+  }
+  commercialsCache = { at: now, list: merged };
+  return merged;
+}
+
 function reload() {
   cache = { at: 0, list: [] };
   musicCache = { at: 0, list: [] };
-  return { features: list().length, music: music().length };
+  commercialsCache = { at: 0, list: [] };
+  return { features: list().length, music: music().length, commercials: commercials().length };
 }
 
-module.exports = { list, music, reload, REPO_FILE, OPERATOR_FILE, MUSIC_REPO_FILE, MUSIC_OPERATOR_FILE };
+module.exports = { list, music, commercials, reload, REPO_FILE, OPERATOR_FILE, MUSIC_REPO_FILE, MUSIC_OPERATOR_FILE, COMMERCIALS_REPO_FILE, COMMERCIALS_OPERATOR_FILE };

@@ -342,6 +342,26 @@ a { color: inherit; }
   margin-top: 14px;
 }
 
+/* A spot says it is one. Top of the programme area, before the embed. */
+.commercial-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--magenta);
+  margin-bottom: 10px;
+}
+.grid-guide li[data-format="commercial"] .g-title {
+  opacity: 0.8;
+}
+.grid-guide li[data-format="commercial"] .g-title::before {
+  content: "Commercial \00b7 ";
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .embed { position: absolute; inset: 0; border: 0; width: 100%; height: 100%; }
 
 /* The field: the overnight visual. It breathes at Φ and does nothing else. */

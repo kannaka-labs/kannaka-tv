@@ -147,6 +147,7 @@ async function route(req, res, url) {
       tower: tower.status(),
       features: features.list().length,
       music: features.music().length,
+      commercials: features.commercials().length,
       auth: auth.providers(),
       serverNow: st.serverNow,
     });

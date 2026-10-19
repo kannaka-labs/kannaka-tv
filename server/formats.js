@@ -21,6 +21,10 @@ const FORMAT_META = {
   'the-gallery': { title: 'The Gallery', duration: 200, kind: 'data' },
   feature: { title: 'Feature', duration: 1500, kind: 'feature' },
   'music-video': { title: 'Music Video', duration: 260, kind: 'feature' },
+  // A house spot for something we sell, 10-90 s, carried by reference. Booked only as a break
+  // between programmes (ADR-0001 decision 3a); `kind: feature` because it IS its content: it is
+  // never re-read at transmission and the client embeds it like any referenced programme.
+  commercial: { title: 'Commercial', duration: 30, kind: 'feature' },
   'jev-the-band': { title: 'Jev the Band', duration: 300, kind: 'music' },
   'carriage-feed': { title: 'Carriage', duration: 180, kind: 'carriage' },
   'carriage-reference': { title: 'Carriage', duration: 300, kind: 'carriage' },
@@ -29,6 +33,7 @@ const FORMAT_META = {
 function buildCatalogue(snap, extras = {}) {
   const features = Array.isArray(extras.features) ? extras.features : [];
   const musicVideos = Array.isArray(extras.music) ? extras.music : [];
+  const commercials = Array.isArray(extras.commercials) ? extras.commercials : [];
   const lastAired = extras.lastAired || {};
 
   // Both slates are chosen the same way: skip what this pass already booked, then take the
@@ -416,6 +421,38 @@ function buildCatalogue(snap, extras = {}) {
           published: m.published || null,
         },
         links: m.url ? [{ label: 'Watch on YouTube', url: m.url }] : [],
+      };
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Commercial. A house spot, 10-90 s, from the Commercials playlist. Least-recently-aired first,
+  // like the other slates; `strict` (the second spot of a break) refuses to repeat a spot this
+  // pass has booked rather than falling back to it. Brings its own sound: no bed.
+  // -------------------------------------------------------------------------
+  c.commercial = {
+    ...FORMAT_META.commercial,
+    pick({ rnd, recent, strict }) {
+      if (!commercials.length) return null;
+      const booked = new Set(recent || []);
+      const fresh = commercials.filter((x) => !booked.has(x.ref));
+      if (strict && !fresh.length) return null;
+      const s = chooseFrom(fresh.length ? fresh : commercials, [], rnd);
+      if (!s || !s.ref) return null;
+      return {
+        key: s.ref,
+        title: 'Commercial',
+        subtitle: s.title,
+        duration: Math.min(90, Math.max(10, Math.round(s.duration || 30))),
+        payload: {
+          commercial: true,
+          title: s.title,
+          sponsor: s.sponsor || null,
+          provider: s.provider || 'youtube',
+          ref: s.ref,
+          published: s.published || null,
+        },
+        links: s.url ? [{ label: s.title, url: s.url }] : [],
       };
     },
   };
