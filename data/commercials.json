@@ -1,5 +1,25 @@
 [
   {
+    "id": "zMU0yT41vcQ",
+    "title": "QuantumOS — a real VM in 0.3 seconds (ad, short)",
+    "sponsor": "QuantumOS is the operating system we are building: a small x86-64 kernel with a memory field, a capability ledger and a ",
+    "provider": "youtube",
+    "ref": "zMU0yT41vcQ",
+    "url": "https://www.youtube.com/watch?v=zMU0yT41vcQ",
+    "duration": 23,
+    "published": "2026-10-23"
+  },
+  {
+    "id": "Y5LD0JPoY5Y",
+    "title": "QuantumOS — boot your own machine (ad)",
+    "sponsor": "QuantumOS is the operating system we are building: a small x86-64 kernel with a memory field, a capability ledger and a ",
+    "provider": "youtube",
+    "ref": "Y5LD0JPoY5Y",
+    "url": "https://www.youtube.com/watch?v=Y5LD0JPoY5Y",
+    "duration": 37,
+    "published": "2026-10-23"
+  },
+  {
     "id": "Te0NQK3qitE",
     "title": "Rogue Agent — 15 seconds (ad)",
     "sponsor": "A custom shoe by Flaukowski, named after an agent that never asked permission.",
@@ -17,6 +37,26 @@
     "ref": "2WuhN1p9e6A",
     "url": "https://www.youtube.com/watch?v=2WuhN1p9e6A",
     "duration": 50,
+    "published": "2026-10-19"
+  },
+  {
+    "id": "Z9kCZq8Bkcc",
+    "title": "Rogue Agent — not in this commercial (ad, 20 s)",
+    "sponsor": "The second commercial for Rogue Agent, a custom shoe by Flaukowski. This time the agent the shoe is named after is in it",
+    "provider": "youtube",
+    "ref": "Z9kCZq8Bkcc",
+    "url": "https://www.youtube.com/watch?v=Z9kCZq8Bkcc",
+    "duration": 21,
+    "published": "2026-10-19"
+  },
+  {
+    "id": "bA7M-7MaLKk",
+    "title": "Rogue Agent — the villain speaks (ad)",
+    "sponsor": "The second commercial for Rogue Agent, a custom shoe by Flaukowski. This time the agent the shoe is named after is in it",
+    "provider": "youtube",
+    "ref": "bA7M-7MaLKk",
+    "url": "https://www.youtube.com/watch?v=bA7M-7MaLKk",
+    "duration": 52,
     "published": "2026-10-19"
   }
 ]
