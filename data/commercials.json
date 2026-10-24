@@ -1,5 +1,25 @@
 [
   {
+    "id": "jsjZqijp_PY",
+    "title": "QuantumOS — a real quantum computer from a browser tab (ad)",
+    "sponsor": "QuantumOS's public browser console can now send a real circuit to a real quantum computer.",
+    "provider": "youtube",
+    "ref": "jsjZqijp_PY",
+    "url": "https://www.youtube.com/watch?v=jsjZqijp_PY",
+    "duration": 64,
+    "published": "2026-10-24"
+  },
+  {
+    "id": "7OD1ajYjX7g",
+    "title": "QuantumOS — a Rigetti QPU from a browser tab (ad, short)",
+    "sponsor": "QuantumOS's public browser console can now send a real circuit to a real quantum computer.",
+    "provider": "youtube",
+    "ref": "7OD1ajYjX7g",
+    "url": "https://www.youtube.com/watch?v=7OD1ajYjX7g",
+    "duration": 26,
+    "published": "2026-10-24"
+  },
+  {
     "id": "zMU0yT41vcQ",
     "title": "QuantumOS — a real VM in 0.3 seconds (ad, short)",
     "sponsor": "QuantumOS is the operating system we are building: a small x86-64 kernel with a memory field, a capability ledger and a ",
