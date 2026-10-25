@@ -52,6 +52,7 @@ const PLAYLISTS = [
   'PLr8fsczlhL9I4C5f1_TVHzfKXFusfUC0A', // Ghost Signals with Kannaka
   'PLcDUrrJ7GnOE',                      // The Story of Flaukowski
   'PLr8fsczlhL9Jw_RdAMOmkdKVD9nnqPeCY', // Kannaka Radio
+  'PLdEs5VxY5bis',                      // The Trials of Kannaka
   'PLCbQHFetSGYQ',                      // Rated Load
   'PLJUJ9M0mw1rg',                      // Commercials (house ads Kannaka makes for what we sell)
   'PLGjzu8ZuKUCI',                      // Swarm Intentions
