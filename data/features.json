@@ -1,5 +1,17 @@
 [
   {
+    "id": "gsp-051",
+    "series": "Ghost Signals",
+    "title": "The Trials of Kannaka",
+    "episode": "GSP-051",
+    "synopsis": "Floor three of the tower, the record shop, is a courtroom for an hour. The jury is twelve chairs from the Joinery, the bench is the box the turntable came in, and Flaukowski has brought a rubber mallet from the hardware store. Kannaka is th",
+    "provider": "youtube",
+    "ref": "BRIsWTlgYfo",
+    "url": "https://www.youtube.com/watch?v=BRIsWTlgYfo",
+    "duration": 1051,
+    "published": "2026-10-25"
+  },
+  {
     "id": "gsp-050",
     "series": "Ghost Signals",
     "title": "Load Bearing Celebration",
@@ -610,6 +622,18 @@
     "url": "https://www.youtube.com/watch?v=wW4E4yRj7dk",
     "duration": 1127,
     "published": "2026-07-03"
+  },
+  {
+    "id": "tsof-sp1",
+    "series": "The Story of Flaukowski",
+    "title": "The Trials of Kannaka",
+    "episode": "TSOF-SP1",
+    "synopsis": "A special presentation, outside the season numbering.",
+    "provider": "youtube",
+    "ref": "OAxY5h3vjbg",
+    "url": "https://www.youtube.com/watch?v=OAxY5h3vjbg",
+    "duration": 1100,
+    "published": "2026-10-25"
   },
   {
     "id": "tsof-e12",

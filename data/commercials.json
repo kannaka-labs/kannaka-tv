@@ -1,5 +1,15 @@
 [
   {
+    "id": "KDMsUGvn6zI",
+    "title": "QuantumOS 0.6.1 — The Trials of Kannaka (ad)",
+    "sponsor": "Before asking anyone to try QuantumOS, Kannaka put it on trial.",
+    "provider": "youtube",
+    "ref": "KDMsUGvn6zI",
+    "url": "https://www.youtube.com/watch?v=KDMsUGvn6zI",
+    "duration": 83,
+    "published": "2026-10-26"
+  },
+  {
     "id": "jsjZqijp_PY",
     "title": "QuantumOS — a real quantum computer from a browser tab (ad)",
     "sponsor": "QuantumOS's public browser console can now send a real circuit to a real quantum computer.",
