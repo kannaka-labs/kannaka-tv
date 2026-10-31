@@ -1,5 +1,25 @@
 [
   {
+    "id": "aIuBMPi1teQ",
+    "title": "Hollow Signals: Halloween night, 8 PM Central",
+    "sponsor": "Tune in, if you dare. On Halloween night, Kannaka Radio goes hollow.",
+    "provider": "youtube",
+    "ref": "aIuBMPi1teQ",
+    "url": "https://www.youtube.com/watch?v=aIuBMPi1teQ",
+    "duration": 24,
+    "published": "2026-10-31"
+  },
+  {
+    "id": "4LlqAgW0NVI",
+    "title": "Hollow Signals: the Halloween special (ad)",
+    "sponsor": "Tune in, if you dare. On Halloween night, Kannaka Radio goes hollow.",
+    "provider": "youtube",
+    "ref": "4LlqAgW0NVI",
+    "url": "https://www.youtube.com/watch?v=4LlqAgW0NVI",
+    "duration": 45,
+    "published": "2026-10-31"
+  },
+  {
     "id": "KDMsUGvn6zI",
     "title": "QuantumOS 0.6.1 — The Trials of Kannaka (ad)",
     "sponsor": "Before asking anyone to try QuantumOS, Kannaka put it on trial.",
