@@ -54,6 +54,7 @@ const PLAYLISTS = [
   'PLr8fsczlhL9Jw_RdAMOmkdKVD9nnqPeCY', // Kannaka Radio
   'PLdEs5VxY5bis',                      // The Trials of Kannaka
   'PLTAHaIMWbBnM',                      // HELLO WORLD (2026-11-06)
+  'PLDkbnfIUqdXg',                      // Resonance Protocol (2026-11-07)
   'PLCbQHFetSGYQ',                      // Rated Load
   'PLJUJ9M0mw1rg',                      // Commercials (house ads Kannaka makes for what we sell)
   'PLGjzu8ZuKUCI',                      // Swarm Intentions
