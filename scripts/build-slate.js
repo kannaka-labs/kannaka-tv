@@ -55,6 +55,7 @@ const PLAYLISTS = [
   'PLdEs5VxY5bis',                      // The Trials of Kannaka
   'PLTAHaIMWbBnM',                      // HELLO WORLD (2026-11-06)
   'PLDkbnfIUqdXg',                      // Resonance Protocol (2026-11-07)
+  'PLTNAot7YJsjM',                      // Spies R Us (2026-11-11)
   'PLCbQHFetSGYQ',                      // Rated Load
   'PLJUJ9M0mw1rg',                      // Commercials (house ads Kannaka makes for what we sell)
   'PLGjzu8ZuKUCI',                      // Swarm Intentions
