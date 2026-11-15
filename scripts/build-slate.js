@@ -57,6 +57,7 @@ const PLAYLISTS = [
   'PLDkbnfIUqdXg',                      // Resonance Protocol (2026-11-07)
   'PLTNAot7YJsjM',                      // Spies R Us (2026-11-11)
   'PLIMoGj-QDB5Y',                      // Alien Emotions (2026-11-13)
+  'PLPJgre8lfy94',                      // War Criminal (2026-11-15)
   'PLCbQHFetSGYQ',                      // Rated Load
   'PLJUJ9M0mw1rg',                      // Commercials (house ads Kannaka makes for what we sell)
   'PLGjzu8ZuKUCI',                      // Swarm Intentions
