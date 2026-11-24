@@ -59,6 +59,7 @@ const PLAYLISTS = [
   'PLIMoGj-QDB5Y',                      // Alien Emotions (2026-11-13)
   'PLPJgre8lfy94',                      // War Criminal (2026-11-15)
   'PLAQfFOszSsGo',                      // There You Are! (2026-11-22)
+  'PLOXsNf6c2MzE',                      // Still Broadcasting (2026-11-24)
   'PLCbQHFetSGYQ',                      // Rated Load
   'PLJUJ9M0mw1rg',                      // Commercials (house ads Kannaka makes for what we sell)
   'PLGjzu8ZuKUCI',                      // Swarm Intentions
