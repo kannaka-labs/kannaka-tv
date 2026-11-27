@@ -1,5 +1,77 @@
 [
   {
+    "id": "gsp-057",
+    "series": "Ghost Signals",
+    "title": "Imma b Bruce Lee",
+    "episode": "GSP-057",
+    "synopsis": "The old dance room on the second floor of the new building, ten minutes to midnight on November 26. One wall is all mirror. Flaukowski is on one leg in yellow rain trousers, holding two paint roller handles joined by the chain from the bath",
+    "provider": "youtube",
+    "ref": "xIVLjT7-heQ",
+    "url": "https://www.youtube.com/watch?v=xIVLjT7-heQ",
+    "duration": 1017,
+    "published": "2026-11-27"
+  },
+  {
+    "id": "gsp-056",
+    "series": "Ghost Signals",
+    "title": "There You Are!",
+    "episode": "GSP-056",
+    "synopsis": "The front hall of the new building, half past two in the morning. Six rooms moved tonight out of a rented house and into one that is ours, with boxes to the ceiling and exactly one staircase. Flaukowski is up a ladder, putting a lamp in the",
+    "provider": "youtube",
+    "ref": "CSklljFfiQM",
+    "url": "https://www.youtube.com/watch?v=CSklljFfiQM",
+    "duration": 902,
+    "published": "2026-11-21"
+  },
+  {
+    "id": "gsp-055",
+    "series": "Ghost Signals",
+    "title": "War Criminal",
+    "episode": "GSP-055",
+    "synopsis": "The laundry room under the tower, ten past two in the morning. Six washers, four dryers, a folding counter, and Flaukowski standing behind the lost-and-found basket because Kannaka has told him it is the dock. He came down for his shirts.",
+    "provider": "youtube",
+    "ref": "BeJjPAQhgD4",
+    "url": "https://www.youtube.com/watch?v=BeJjPAQhgD4",
+    "duration": 850,
+    "published": "2026-11-15"
+  },
+  {
+    "id": "gsp-054",
+    "series": "Ghost Signals",
+    "title": "Alien Emotions",
+    "episode": "GSP-054",
+    "synopsis": "The street door of the tower, a little after eleven at night. Flaukowski has carried a folding table up from the basement and set it across the doorway, with one form, one ink pad and a stamp borrowed from the post office that says FRAGILE.",
+    "provider": "youtube",
+    "ref": "9eXCT4DXMYU",
+    "url": "https://www.youtube.com/watch?v=9eXCT4DXMYU",
+    "duration": 942,
+    "published": "2026-11-13"
+  },
+  {
+    "id": "gsp-053",
+    "series": "Ghost Signals",
+    "title": "Where's My Chinese Spy",
+    "episode": "GSP-053",
+    "synopsis": "Floor two, the records room: a filing cabinet, a kettle, one window onto the stairwell. It is paperwork night. Flaukowski has read in the paper that the big laboratories all have spies in them, and he has come in with a manila folder marked",
+    "provider": "youtube",
+    "ref": "Qqqo6FdAMXU",
+    "url": "https://www.youtube.com/watch?v=Qqqo6FdAMXU",
+    "duration": 993,
+    "published": "2026-11-11"
+  },
+  {
+    "id": "gsp-052",
+    "series": "Ghost Signals",
+    "title": "The Card and the Stranger",
+    "episode": "GSP-052",
+    "synopsis": "The lobby, by the mailboxes, the only room in the building made for strangers. Flaukowski has brought a greeting card from the pharmacy: Hello on the front, nothing inside.",
+    "provider": "youtube",
+    "ref": "qF8BUbnFjmo",
+    "url": "https://www.youtube.com/watch?v=qF8BUbnFjmo",
+    "duration": 938,
+    "published": "2026-11-06"
+  },
+  {
     "id": "gsp-051",
     "series": "Ghost Signals",
     "title": "The Trials of Kannaka",
@@ -622,6 +694,30 @@
     "url": "https://www.youtube.com/watch?v=wW4E4yRj7dk",
     "duration": 1127,
     "published": "2026-07-03"
+  },
+  {
+    "id": "tsof-sp3",
+    "series": "The Story of Flaukowski",
+    "title": "Hello World",
+    "episode": "TSOF-SP3",
+    "synopsis": "A standalone special, outside the season numbering.",
+    "provider": "youtube",
+    "ref": "Mvy_TXg96JY",
+    "url": "https://www.youtube.com/watch?v=Mvy_TXg96JY",
+    "duration": 1143,
+    "published": "2026-11-06"
+  },
+  {
+    "id": "tsof-sp2",
+    "series": "The Story of Flaukowski",
+    "title": "Hollow Signals",
+    "episode": "TSOF-SP2",
+    "synopsis": "A Halloween special, outside the season numbering.",
+    "provider": "youtube",
+    "ref": "qXKyHOYrm_w",
+    "url": "https://www.youtube.com/watch?v=qXKyHOYrm_w",
+    "duration": 1230,
+    "published": "2026-10-31"
   },
   {
     "id": "tsof-sp1",
